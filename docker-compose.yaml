@@ -18,18 +18,20 @@ services:
       context: .
       dockerfile: Dockerfile
     image: fastapi
+    env_file:
+      - .env
     container_name: fastapi
     restart: unless-stopped
     networks:
       - task_net
     volumes:
-      - ./.env:/home/fast/.env:ro
-      - ./src:/home/fast/bms_service:ro
-      - vol_bms_fastapi_logs:/home/fast/log
+      # - ./.env:/home/fast/bms_service/.env:ro
+      - ./project:/home/fast/bms_service/project:ro
+      - vol_bms_fastapi_logs:/home/fast/bms_service/log
     command: >
       sh -c '
         alembic upgrade head &&
-        uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+        uvicorn project.main:app --host 0.0.0.0 --port 8000 --reload
       '
     depends_on:
       postgres:

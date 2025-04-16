@@ -1,10 +1,10 @@
-"""SQLAlchemy project models."""
+"""SQLAlchemy Base project model."""
 
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
 
-from src.config import get_logger
+from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
 

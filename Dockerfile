@@ -12,9 +12,9 @@ RUN mkdir -p $PROJECT_DIR \
     && apt install curl
 
 
-RUN mkdir -p $HOME/log && chown fast:fast $HOME/log
+RUN mkdir -p $PROJECT_DIR/log
 
-WORKDIR $HOME
+WORKDIR $PROJECT_DIR
 
 COPY ./requirements.txt .
 

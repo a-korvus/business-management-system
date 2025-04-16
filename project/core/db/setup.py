@@ -1,0 +1,35 @@
+"""Main database settings."""
+
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+
+from project.core.db.config import db_config
+
+async_engine: AsyncEngine = create_async_engine(
+    url=db_config.url_async,
+    echo=False,
+    pool_size=5,
+    max_overflow=10,
+)
+
+async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    bind=async_engine,
+    expire_on_commit=False,
+)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Dependency that provides asynchronous SQLAlchemy database session.
+
+    Yields:
+        AsyncSession: SQLAlchemy AsyncSession instance for database operations.
+    """
+    async with async_session() as session:
+        yield session

@@ -36,9 +36,9 @@ select = [
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-pythonpath = [".", "src"]
+pythonpath = [".", "project"]
 testpaths = ["tests"]
-norecursedirs = [".git", ".venv", "src"]
+norecursedirs = [".git", ".venv", "project"]
 
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests"]
