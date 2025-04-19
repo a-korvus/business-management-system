@@ -12,19 +12,19 @@ from project.app_auth.application.schemas import (
     UserRead,
 )
 from project.app_auth.application.services import AuthService
-from project.app_auth.config import auth_config
 from project.app_auth.domain.exceptions import (
     AuthenticationError,
     EmailAlreadyExists,
     InvalidPasswordFormatError,
 )
 from project.app_auth.presentation.dependencies import get_auth_service
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix=auth_config.APP_AUTH_PREFIX_AUTH,
+    prefix=settings.AUTH.PREFIX_AUTH,
     tags=["Users", "Authentication"],
 )
 

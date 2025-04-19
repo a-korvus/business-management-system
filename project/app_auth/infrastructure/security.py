@@ -11,8 +11,8 @@ from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
 
 from project.app_auth.application.interfaces import PasswordHasher
-from project.app_auth.config import auth_config
 from project.app_auth.domain.exceptions import InvalidPasswordFormatError
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -27,11 +27,11 @@ class CryptographyPasswordHasher(PasswordHasher):
 
     def __init__(
         self,
-        time_cost: int = auth_config.ARGON2_TIME_COST,
-        memory_cost: int = auth_config.ARGON2_MEMORY_COST,
-        parallelism: int = auth_config.ARGON2_PARALLELISM,
-        salt_length: int = auth_config.ARGON2_SALT_LENGTH,
-        hash_length: int = auth_config.ARGON2_HASH_LENGTH,
+        time_cost: int = settings.AUTH.ARGON2_TIME_COST,
+        memory_cost: int = settings.AUTH.ARGON2_MEMORY_COST,
+        parallelism: int = settings.AUTH.ARGON2_PARALLELISM,
+        salt_length: int = settings.AUTH.ARGON2_SALT_LENGTH,
+        hash_length: int = settings.AUTH.ARGON2_HASH_LENGTH,
     ) -> None:
         self.time_cost = time_cost
         self.memory_cost = memory_cost

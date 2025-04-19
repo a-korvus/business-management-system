@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from project.core.db.config import db_config
+from project.config import settings
 
 async_engine: AsyncEngine = create_async_engine(
-    url=db_config.url_async,
+    url=settings.DB.url_async,
     echo=False,
     pool_size=5,
     max_overflow=10,

@@ -5,14 +5,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from project.app_auth.application.schemas import UserRead
-from project.app_auth.config import auth_config
 from project.app_auth.presentation.dependencies import get_current_user
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter(
-    prefix=auth_config.APP_AUTH_PREFIX_USERS,
+    prefix=settings.AUTH.PREFIX_USERS,
     tags=["Users"],
 )
 

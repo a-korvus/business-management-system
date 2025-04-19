@@ -4,7 +4,7 @@ import logging
 import logging.config
 import sys
 
-from project.constants import DEV_MODE, LOG_DIR
+from project.config import settings
 
 # основная конфигурация логгера для проекта
 log_conf: dict = {
@@ -20,7 +20,7 @@ log_conf: dict = {
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "INFO",
-            "filename": f"{LOG_DIR}/log.log",
+            "filename": f"{settings.LOG_DIR}/log.log",
             "maxBytes": 1024 * 1024,  # 1 MB
             "backupCount": 5,
             "encoding": "utf-8",
@@ -40,7 +40,7 @@ log_conf: dict = {
 }
 
 # вспомогательная конфигурация логгера для development mode
-if DEV_MODE:
+if settings.DEV_MODE:
     # log_conf["loggers"]["file"]["level"] = "DEBUG"
     # log_conf["handlers"]["file"]["level"] = "DEBUG"
     log_conf["handlers"]["console"] = {

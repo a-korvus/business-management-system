@@ -13,10 +13,10 @@ from project.app_auth.application.interfaces import (
 from project.app_auth.application.schemas import TokenData, UserRead
 from project.app_auth.application.security import decode_access_token
 from project.app_auth.application.services import AuthService, UserService
-from project.app_auth.config import auth_config
 from project.app_auth.infrastructure.security import password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -49,7 +49,7 @@ def get_user_service(
 
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{auth_config.APP_AUTH_PREFIX_AUTH}/login/",
+    tokenUrl=f"{settings.AUTH.PREFIX_AUTH}/login/",
 )
 
 

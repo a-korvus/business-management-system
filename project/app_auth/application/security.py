@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 
 from project.app_auth.application.schemas import TokenData
-from project.app_auth.config import auth_config
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -22,15 +22,15 @@ def create_access_token(
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            minutes=auth_config.ACCESS_TOKEN_EXPIRE_MINUTES
+            minutes=settings.AUTH.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
     # issued at; время выдачи токена
     to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
     return jwt.encode(
         payload=to_encode,
-        key=auth_config.SECRET_KEY,
-        algorithm=auth_config.ALGORITHM,
+        key=settings.AUTH.SECRET_KEY,
+        algorithm=settings.AUTH.ALGORITHM,
     )
 
 
@@ -39,8 +39,8 @@ def decode_access_token(token: str) -> TokenData | None:
     try:
         payload = jwt.decode(
             jwt=token,
-            key=auth_config.SECRET_KEY,
-            algorithms=[auth_config.ALGORITHM],
+            key=settings.AUTH.SECRET_KEY,
+            algorithms=[settings.AUTH.ALGORITHM],
             options={"require": ["exp", "sub", "uid"]},  # обязательные поля
         )
         return TokenData.model_validate(payload)
