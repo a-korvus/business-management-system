@@ -7,9 +7,11 @@ ENV HOME=/home/fast \
     DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p $PROJECT_DIR \
-    && groupadd -r fast \
-    && useradd -r -g fast fast \
-    && apt install curl
+    # && groupadd -r fast \
+    # && useradd -r -g fast fast \
+    && apt update && apt upgrade -y && apt autoremove -y \
+    && apt install curl \
+    && rm -rf /var/lib/apt/lists/*
 
 
 RUN mkdir -p $PROJECT_DIR/log
@@ -19,12 +21,11 @@ WORKDIR $PROJECT_DIR
 COPY ./requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r ./requirements.txt \
-    && chown -R fast:fast $HOME
-
+    && pip install --no-cache-dir -r ./requirements.txt
+    # && chown -R fast:fast $HOME
 
 COPY . .
 
-RUN chown -R fast:fast $PROJECT_DIR
+# RUN chown -R fast:fast $PROJECT_DIR
 
-USER fast
+# USER fast

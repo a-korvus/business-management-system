@@ -18,18 +18,18 @@ async_engine: AsyncEngine = create_async_engine(
     max_overflow=10,
 )
 
-async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+AsyncSessionFactory: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=async_engine,
     expire_on_commit=False,
 )
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency that provides asynchronous SQLAlchemy database session.
 
     Yields:
         AsyncSession: SQLAlchemy AsyncSession instance for database operations.
     """
-    async with async_session() as session:
+    async with AsyncSessionFactory() as session:
         yield session

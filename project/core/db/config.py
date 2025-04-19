@@ -6,13 +6,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class PGConfig(BaseSettings):
     """Postgres configuration."""
 
-    model_config = SettingsConfigDict(extra="allow")
-
     PG_HOST: str = "localhost"
     PG_PORT: int = 5432
     PG_DB_NAME: str = "mydb"
     PG_USER: str = "user"
     PG_PASSWORD: str = "password"
+
+    model_config = SettingsConfigDict(extra="allow")
 
     @property
     def url_async(self) -> str:

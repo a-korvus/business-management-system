@@ -25,8 +25,8 @@ class Base(AsyncAttrs, DeclarativeBase):
             if col in self.repr_cols or idx < self.repr_cols_num:
                 try:
                     col_value = getattr(self, col)
-                except MissingGreenlet as _ex:
-                    logger.error(msg=f"Impossible to perform {col=} {_ex}")
+                except MissingGreenlet:
+                    logger.exception("Impossible to perform column '%s'", col)
                     col_value = "<unloaded>"
 
                 cols.append(f"{col}={col_value}")

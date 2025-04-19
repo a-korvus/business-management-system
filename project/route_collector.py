@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
-from project.app_auth.presentation.routers.auth import router as auth_router
+from project.app_auth.presentation.routers.auth import router as rr_auth
+from project.app_auth.presentation.routers.users import router as rr_users
 
-project_routers: list[APIRouter] = [auth_router]
+project_routers: list[APIRouter] = [rr_auth, rr_users]

@@ -25,8 +25,8 @@ services:
     networks:
       - task_net
     volumes:
-      # - ./.env:/home/fast/bms_service/.env:ro
-      - ./project:/home/fast/bms_service/project:ro
+      # - ./project:/home/fast/bms_service/project:ro
+      - ./project:/home/fast/bms_service/project:rw
       - vol_bms_fastapi_logs:/home/fast/bms_service/log
     command: >
       sh -c '

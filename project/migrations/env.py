@@ -8,6 +8,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from project.app_auth.domain.models import Profile, User  # noqa
 from project.core.db.base import Base
 from project.core.db.config import db_config
 
