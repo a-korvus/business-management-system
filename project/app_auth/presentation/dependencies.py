@@ -10,9 +10,10 @@ from project.app_auth.application.interfaces import (
     AbstractUnitOfWork,
     PasswordHasher,
 )
-from project.app_auth.application.schemas import TokenData, UserRead
+from project.app_auth.application.schemas import TokenData
 from project.app_auth.application.security import decode_access_token
 from project.app_auth.application.services import AuthService, UserService
+from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
@@ -68,7 +69,7 @@ async def get_current_user_data(
 async def get_current_user(
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-) -> UserRead:
+) -> User:
     """
     Get current user from DB based on token data.
 
@@ -82,11 +83,11 @@ async def get_current_user(
         CredentialException: UUID is invalid.
 
     Returns:
-        UserRead: User data as pydantic schema.
+        User: User model object.
     """
     try:
         user_id = uuid.UUID(token_data.uid)
-        user: UserRead | None = await user_service.get_user_by_id(user_id)
+        user: User | None = await user_service.get_user_by_id(user_id)
 
         if user is None:
             raise CredentialException(

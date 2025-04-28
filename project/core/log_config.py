@@ -3,6 +3,7 @@
 import logging
 import logging.config
 import sys
+from functools import lru_cache
 
 from project.config import settings
 
@@ -57,6 +58,7 @@ if settings.DEV_MODE:
     log_conf["loggers"]["root"]["handlers"].append("console")
 
 
+@lru_cache(maxsize=128)
 def get_logger(name: str) -> logging.Logger:
     """
     Create configured logger.

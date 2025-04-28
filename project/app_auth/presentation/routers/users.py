@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from project.app_auth.application.schemas import UserRead
 from project.app_auth.application.services import UserService
+from project.app_auth.domain.models import User
 from project.app_auth.presentation.dependencies import (
     get_current_user,
     get_user_service,
@@ -24,12 +25,13 @@ router = APIRouter(
 @router.get(
     path="/me/",
     response_model=UserRead,
+    name="identity",
     summary="Get current user.",
     description="Return the details of the currently authenticated user.",
 )
 async def read_users_me(
-    current_user: Annotated[UserRead, Depends(get_current_user)],
-) -> UserRead:
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
     """
     Return data of the current user.
 
@@ -38,7 +40,7 @@ async def read_users_me(
             current user. Requires a valid token in headers.
 
     Returns:
-        UserRead: User data.
+        User: User object.
     """
     return current_user
 

@@ -155,7 +155,7 @@ class UserService:
             raise UserNotFound(user_id, email)
         return user
 
-    async def get_user_by_id(self, user_id: uuid.UUID) -> UserRead | None:
+    async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
         """
         Get user by ID.
 
@@ -166,12 +166,9 @@ class UserService:
             UserRead | None: User data as pydantic schema.
         """
         async with self.uow:
-            user = await self.uow.users.get_by_id(user_id)
-            if not user:
-                return None
-            return UserRead.model_validate(user)
+            return await self.uow.users.get_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> UserRead | None:
+    async def get_user_by_email(self, email: str) -> User | None:
         """
         Get user by email.
 
@@ -182,10 +179,7 @@ class UserService:
             UserRead | None: User data as pydantic schema.
         """
         async with self.uow:
-            user = await self.uow.users.get_by_email(email)
-            if not user:
-                return None
-            return UserRead.model_validate(user)
+            return await self.uow.users.get_by_email(email)
 
     async def get_all_users(self) -> list[UserRead]:
         """

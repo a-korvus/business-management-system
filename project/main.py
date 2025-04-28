@@ -5,22 +5,30 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
-
 from sqladmin import Admin
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from project.app_admin.admin_collector import admin_models
-# from project.app_admin.auth_service import authentication_backend
+from project.app_admin.auth_back import authentication_backend
+from project.config import settings
 from project.core.db.setup import async_engine
 from project.core.log_config import get_logger
 from project.route_collector import project_routers
 
 logger = get_logger(__name__)
 
+middlewares = [
+    Middleware(SessionMiddleware, secret_key=settings.ADMIN_SECRET_KEY),
+]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Application startup.")
+
     yield
+
     logger.info("Application shutdown.")
     await async_engine.dispose()
     logger.info("Database connection closed.")
@@ -29,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
+    middleware=middlewares,
     title="Business management system.",
     description="Microservice app. Business vanagement and control system",
 )
@@ -37,7 +46,7 @@ app_admin = Admin(
     app=app,
     engine=async_engine,
     title="BMS Admin Panel",
-    # authentication_backend=authentication_backend,
+    authentication_backend=authentication_backend,
 )
 
 
