@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(
     prefix=settings.AUTH.PREFIX_AUTH,
-    tags=["Users", "Authentication"],
+    tags=["users", "authentication"],
 )
 
 
@@ -41,7 +41,7 @@ async def register(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> UserRead:
     """
-    Register new user in system.
+    Self-registration of a new user in the system.
 
     Args:
         user_in (UserCreate): User input data.
@@ -88,12 +88,12 @@ async def login_for_access_token(
 ) -> Token:
     """Authenticate the user by email and password."""
     try:
-        login_credenrials = LoginSchema(
+        login_credentials = LoginSchema(
             username=form_data.username,
             password=form_data.password,
         )
         return await auth_service.authenticate_user(
-            credentials=login_credenrials,
+            credentials=login_credentials,
         )
     except AuthenticationError as e:
         raise HTTPException(

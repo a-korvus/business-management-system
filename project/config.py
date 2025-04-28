@@ -6,6 +6,7 @@ Combines configurations for different parts of the project.
 """
 
 import os
+from functools import lru_cache
 from pathlib import Path
 
 from pydantic import PostgresDsn
@@ -52,8 +53,11 @@ class AuthConfig(BaseSettings):
     PREFIX_USERS: str = "/users"
 
     # JWT settings
-    SECRET_KEY: str = ""
-    ALGORITHM: str = "HS256"
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    JWT_TYPE: str = "JWT"
+    JWT_ISSUER: str = "my_auth_server"  # кто создал и подписал токен
+    JWT_AUDIENCE: str = "my_api_resource"  # кто получает токен
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # настройки хеширования паролей (Argon2)
@@ -76,6 +80,7 @@ class ProjectSettings(BaseSettings):
 
     DEV_MODE: bool = False
     LOG_DIR: Path = ROOT_DIR / "log"
+    ADMIN_SECRET_KEY: str = ""
 
     # вложенные конфиги
     DB: PGConfig = PGConfig()
@@ -84,4 +89,10 @@ class ProjectSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PROJECT_", extra="allow")
 
 
-settings = ProjectSettings()
+@lru_cache(maxsize=1)
+def get_settings() -> ProjectSettings:
+    """Cache the settings config."""
+    return ProjectSettings()
+
+
+settings: ProjectSettings = get_settings()

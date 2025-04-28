@@ -112,7 +112,7 @@ class AuthService:
                 ) from e
 
         # генерация JWT токена
-        access_token = create_access_token(
+        access_token: str = create_access_token(
             data={"sub": user.email, "uid": str(user.id)}
         )
         return Token(access_token=access_token, token_type="bearer")
