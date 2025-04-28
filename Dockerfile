@@ -1,14 +1,14 @@
-FROM python:3.13.2
+FROM python:3.13.3
 
-ENV HOME=/home/fast \
-    PROJECT_DIR=/home/fast/bms_service \
+ENV HOME=/home/dude \
+    PROJECT_DIR=/home/dude/bms_service \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p $PROJECT_DIR \
-    # && groupadd -r fast \
-    # && useradd -r -g fast fast \
+    # && groupadd -r dude \
+    # && useradd -r -g dude dude \
     && apt update && apt upgrade -y && apt autoremove -y \
     && apt install curl \
     && rm -rf /var/lib/apt/lists/*
@@ -22,10 +22,10 @@ COPY ./requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r ./requirements.txt
-    # && chown -R fast:fast $HOME
+    # && chown -R dude:dude $HOME
 
 COPY . .
 
-# RUN chown -R fast:fast $PROJECT_DIR
+# RUN chown -R dude:dude $PROJECT_DIR
 
-# USER fast
+# USER dude

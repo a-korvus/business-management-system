@@ -3,7 +3,6 @@
 .gitignore
 .gitattributes
 
-
 # CI
 .codeclimate.yml
 .travis.yml
@@ -105,8 +104,7 @@ unload/
 
 # project files
 README.md
-requirements_dev.txt
-req_handler.py
-lint.py
 pyproject.toml
+requirements.dev.txt
 pytest.ini
+lint.py

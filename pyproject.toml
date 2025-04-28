@@ -1,3 +1,47 @@
+[project]
+name = "business-management-system"
+version = "0.1.0"
+description = "Small example of business management system."
+authors = [{ name = "Alex", email = "alx.korvus@gmail.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]",
+    "sqlalchemy>=2.0",
+    "alembic",
+    "asyncpg",
+    "cryptography",
+    "authlib",
+    "httpx",
+    "sqladmin",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pip-tools",
+    "pipdeptree",
+    "pytest",
+
+    # linters
+    "mypy",
+    "black",
+    "isort",
+    "flake8",
+    "flake8-docstrings",
+    "flake8-bugbear",
+    "flake8-pie",
+    "flake8-pyproject",
+
+    # stubs
+    "types-authlib",
+]
+
+[build-system]
+requires = ["setuptools>=79", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["project"]
+
 [tool.mypy]
 exclude = ["venv/", ".venv/", "build/", "dist/"]
 namespace_packages = true
