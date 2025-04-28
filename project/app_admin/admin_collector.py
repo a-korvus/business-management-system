@@ -2,6 +2,6 @@
 
 from sqladmin import ModelView
 
-from project.app_admin.models.app_auth import UserAdmin
+from project.app_admin.models.app_auth import ProfileAdmin, UserAdmin
 
-admin_models: list[type[ModelView]] = [UserAdmin]
+admin_models: list[type[ModelView]] = [UserAdmin, ProfileAdmin]

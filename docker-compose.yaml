@@ -31,6 +31,7 @@ services:
     command: >
       sh -c '
         alembic upgrade head &&
+        python -m project.app_admin.create_master &&
         uvicorn project.main:app --host 0.0.0.0 --port 8000 --reload
       '
     depends_on:
