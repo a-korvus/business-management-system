@@ -5,6 +5,10 @@
 #    pip-compile --extra=dev --output-file=requirements.dev.txt pyproject.toml
 #
 alembic==1.15.2
+    # via
+    #   alembic-postgresql-enum
+    #   business-management-system (pyproject.toml)
+alembic-postgresql-enum==1.7.0
     # via business-management-system (pyproject.toml)
 annotated-types==0.7.0
     # via pydantic
@@ -185,6 +189,7 @@ sqladmin==0.20.1
 sqlalchemy==2.0.40
     # via
     #   alembic
+    #   alembic-postgresql-enum
     #   business-management-system (pyproject.toml)
     #   sqladmin
 starlette==0.46.2

@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[all]",
     "sqlalchemy>=2.0",
     "alembic",
+    "alembic-postgresql-enum",
     "asyncpg",
     "cryptography",
     "authlib",
