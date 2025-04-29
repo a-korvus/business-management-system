@@ -103,6 +103,3 @@ markers = [
 
 junit_family = "xunit2"
 junit_logging = "all"
-
-asyncio_mode = "strict"
-asyncio_default_fixture_loop_scope = "session"
