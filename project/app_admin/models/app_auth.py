@@ -31,11 +31,13 @@ class UserAdmin(ModelView, model=User):
         User.updated_at,
         User.is_active,
         User.profile,
+        User.role,
     ]
     column_formatters_detail = {
         User.created_at: format_datetime_local,
         User.updated_at: format_datetime_local,
         User.profile: lambda m, a: Markup("<b>Go to profile</b>"),
+        User.role: lambda m, a: Markup("<b>Go to role</b>"),
     }
 
     form_excluded_columns = [User.hashed_password, User.profile]

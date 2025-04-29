@@ -16,6 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from project.app_org.domain.models import Role
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
@@ -51,12 +52,22 @@ class User(Base):
         onupdate=func.now(),
     )
 
+    role_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("roles.id", ondelete="RESTRICT", name="fk_users_role_id"),
+        nullable=True,
+        index=True,
+        default=None,
+    )
+
     profile: Mapped[Profile] = relationship(
         "Profile",
         back_populates="user",
         cascade="all, delete-orphan",
         uselist=False,
         lazy="joined",
+    )
+    role: Mapped[Role | None] = relationship(
+        back_populates="users",
     )
 
     def __init__(
@@ -66,17 +77,23 @@ class User(Base):
         hasher: "PasswordHasher",
         **kwargs: Any,
     ) -> None:
-        """Initialize the user. Immediately hash the password."""
+        """
+        Initialize the user.
+
+        Handles standard attribute assignments via super(), then performs
+        custom logic for email validation, password hashing,
+        and profile creation.
+        """
+        super().__init__(**kwargs)
+
         if not email:
             raise ValueError("Email cannot be empty.")
-        self.email = email
-        self.is_active = kwargs.get("is_active", True)
 
-        # применяем сеттер для хэширования и установки значения хэша пароля
+        self.email = email
         self.set_password(plain_password, hasher)
-        # сразу создаем связанный Profile; связь между экземплярами
-        # user и profile реализуется sqlalchemy на основе back_populates
-        self.profile = Profile()
+
+        if not hasattr(self, "profile") or self.profile is None:
+            self.profile = Profile()
 
     def set_password(
         self,
@@ -128,9 +145,18 @@ class Profile(Base):
     first_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     bio: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE", name="fk_profiles_user_id"),
         unique=True,
         index=True,
     )
