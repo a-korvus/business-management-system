@@ -2,7 +2,7 @@
 
 from sqladmin import ModelView
 
-from project.app_org.domain.models import Command, Department, Role, News
+from project.app_org.domain.models import Command, Department, News, Role
 
 
 class CommandAdmin(ModelView, model=Command):

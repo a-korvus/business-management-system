@@ -6,8 +6,8 @@ from project.app_admin.models.app_auth import ProfileAdmin, UserAdmin
 from project.app_admin.models.app_org import (
     CommandAdmin,
     DepartmentAdmin,
-    RoleAdmin,
     NewsAdmin,
+    RoleAdmin,
 )
 
 admin_models: list[type[ModelView]] = [

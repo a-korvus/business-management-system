@@ -18,6 +18,7 @@ from project.app_auth.infrastructure.security import password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
 from project.config import settings
+from project.core.db.setup import AsyncSessionFactory
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +27,7 @@ logger = get_logger(__name__)
 def get_uow() -> AbstractUnitOfWork:
     """Get Unit of Work instance."""
     # фабрику сессий получаем в конструкторе класса по умолчанию
-    return SAUnitOfWork()
+    return SAUnitOfWork(session_factory=AsyncSessionFactory)
 
 
 def get_password_hasher() -> PasswordHasher:

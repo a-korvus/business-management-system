@@ -20,9 +20,9 @@ class PGConfig(BaseSettings):
 
     HOST: str = "localhost"
     PORT: int = 5432
-    DB_NAME: str = "mydb"
-    USER: str = "user"
-    PASSWORD: str = "password"
+    DB_NAME: str = "my_db"
+    USER: str = "task_user"
+    PASSWORD: str = "some_pswr"
 
     DSN: PostgresDsn | None = None
 

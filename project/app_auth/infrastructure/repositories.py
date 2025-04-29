@@ -13,7 +13,11 @@ from project.app_auth.domain.models import User
 class SAUserRepository(AbstractUserRepository):
     """Implementation of user repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession | None) -> None:
+        """Initialize a User Repository."""
+        if session is None:
+            raise ValueError(f"{self.__class__.__name__} get an empty session")
+
         self._session = session
 
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:

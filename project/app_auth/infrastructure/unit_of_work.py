@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from project.app_auth.application.interfaces import AbstractUnitOfWork
 from project.app_auth.infrastructure.repositories import SAUserRepository
-from project.core.db.setup import AsyncSessionFactory
 
 
 class SAUnitOfWork(AbstractUnitOfWork):
@@ -15,18 +14,29 @@ class SAUnitOfWork(AbstractUnitOfWork):
 
     def __init__(
         self,
-        session_factory: async_sessionmaker[
-            AsyncSession
-        ] = AsyncSessionFactory,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
+        session: AsyncSession | None = None,
     ) -> None:
         """Initialize the unit of work."""
+        if session_factory is None and session is None:
+            raise ValueError(f"{self.__class__.__name__} has not session!")
+
+        if session_factory and session:
+            raise ValueError(
+                f"{self.__class__.__name__} must have either a "
+                "session factory or a session, not both!"
+            )
+
         self._session_factory = session_factory
-        self._session: AsyncSession | None = None
+        self._session = session
 
     async def __aenter__(self) -> Self:
         """Enter to the context manager. Create a session and repositories."""
-        self._session = self._session_factory()
+        if self._session_factory:
+            self._session = self._session_factory()
+
         self.users = SAUserRepository(self._session)
+
         return self
 
     async def __aexit__(
