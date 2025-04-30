@@ -1,5 +1,4 @@
-"""
-Setup test DB.
+"""Setup test DB.
 
 An independent engine is created to perform test environment setup.
 """
@@ -40,8 +39,7 @@ async def create_test_db_and_user(
     test_user: str,
     test_password: str,
 ) -> None:
-    """
-    Connect to PostgreSQL and create test db and test user.
+    """Connect to PostgreSQL and create test db and test user.
 
     Use existing credentials. Dispose of the engine after completing work.
     """
@@ -66,7 +64,7 @@ async def create_test_db_and_user(
                     f"WITH PASSWORD '{test_password}'"
                 )
                 await conn.execute(create_user_sql)
-                logger.info("User '%s' created", test_user)
+                logger.info("Test user '%s' created", test_user)
             else:
                 logger.info("Test user '%s' already exists", test_user)
 
@@ -133,8 +131,7 @@ async def create_test_db_and_user(
 
 
 async def setup_db_before_tests() -> None:
-    """
-    Run creating test DB and test user.
+    """Run creating test DB and test user.
 
     Raises:
         RuntimeError: Exceptions raised during setup.
@@ -174,11 +171,15 @@ async def setup_db_before_tests() -> None:
     finally:
         # очищаем ресурсы движка тестовой БД, если он был создан
         if test_engine:
-            logger.info("Disposing of test engine used for table creation.")
+            logger.info(
+                "Disposing of setup test engine used for table creation."
+            )
             await test_engine.dispose()
-            logger.info("Test engine disposed.")
+            logger.info("Setup test engine disposed.")
         else:
-            logger.warning("Test engine was not created, skipping disposal.")
+            logger.warning(
+                "Setup test engine was not created, skipping disposal."
+            )
 
 
 async def cleanup_test_environment(
@@ -266,8 +267,7 @@ async def cleanup_test_environment(
 
 
 async def teardown_db_after_tests() -> None:
-    """
-    Call test environment cleanup.
+    """Call test environment cleanup.
 
     Raises:
         RuntimeError: Exception occurred while cleanup the test environment.

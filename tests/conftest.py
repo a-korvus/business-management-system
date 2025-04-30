@@ -1,9 +1,11 @@
 """Pytest configuration settings."""
 
+import asyncio
 from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from pytest import FixtureRequest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -38,29 +40,63 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture(scope="session")
-async def db_engine_generator() -> AsyncGenerator[AsyncEngine, None]:
-    """
-    Manage the test database engine at the session level.
+async def db_engine(
+    request: FixtureRequest,
+    _session_event_loop: asyncio.AbstractEventLoop,
+) -> AsyncEngine:
+    """Create the test DB engine for the test session.
 
-    1. Run custom setup method;
-    2. Yields the SQLAlchemy test engine connected to the test database;
-    3. Run custom teardown method.
+    Handle teardown using 'addfinalizer'.
+
+    Args:
+        request (FixtureRequest): Pytest fixture request object;
+            used to register a finalizer ('addfinalizer').
+        _session_event_loop (asyncio.AbstractEventLoop): Asyncio session event
+            loop (provided by pytest-asyncio) is required to correctly run the
+            async finalizer via `run_until_complete` at the end of the session.
 
     Returns:
-        AsyncGenerator[AsyncEngine, None]: Main test engine.
+        AsyncEngine: SQLAlchemy async engine connected to the test database.
     """
     test_engine: AsyncEngine | None = None
+    loop = _session_event_loop
+
     try:
         await setup_db_before_tests()
         test_engine = create_async_engine(url=TEST_DB_URL)
         logger.info("Test engine created successfully.")
-        yield test_engine
+
+        async def async_finalizer() -> None:
+            """Final teardown to realize resourses."""
+            logger.info("Running final database teardown (finalizer)")
+            await teardown_db_after_tests()
+            logger.info("Final database teardown completed (finalizer)")
+
+        def sync_finalizer_wrapper() -> None:
+            """Sync wrapper to use async_finalizer into the event loop."""
+            logger.info("Running 'sync_finalizer_wrapper'")
+            try:
+                loop.run_until_complete(async_finalizer())
+                # можно и так, если нужно вызвать только одну корутину:
+                # loop.run_until_complete(teardown_db_after_tests())
+                logger.info("'sync_finalizer_wrapper' finished successfully.")
+            except Exception:  # noqa
+                logger.exception("Exception during finalizer execution")
+
+        request.addfinalizer(sync_finalizer_wrapper)
+
+        return test_engine
 
     except Exception as e:  # noqa
-        logger.exception("Critical error during test database setup: %s", e)
-        pytest.fail(f"Failed to configure test environment: {e}")
+        logger.exception("Critical error during db_engine setup")
         if test_engine:
-            await test_engine.dispose()
+            try:
+                await test_engine.dispose()
+            except Exception as dispose_err:  # noqa
+                logger.error(
+                    "Error disposing engine after setup failure: '%s'",
+                    dispose_err,
+                )
 
         logger.warning("Attempting cleanup after failed setup")
         try:
@@ -69,40 +105,30 @@ async def db_engine_generator() -> AsyncGenerator[AsyncEngine, None]:
             logger.error(
                 "Error during cleanup after failed setup: %s", cleanup_e
             )
+        pytest.fail(f"Failed to configure test environment: {e}")
         raise  # исходная ошибка настройки, чтобы тесты не запустились
 
-    finally:
-        # очистка после всех тестов (выполняется после yield)
-        logger.info("Starting final test environment cleanup")
-        if test_engine:
-            logger.info("Disposing test engine resources")
-            await test_engine.dispose()
-            logger.info("Test engine resources disposed")
 
-        try:
-            logger.info("Running final database teardown")
-            await teardown_db_after_tests()
-            logger.info("Final database teardown completed")
-        except Exception:  # noqa
-            logger.exception("Error during final teardown after tests")
-            # не проваливаем сессию из-за ошибки очистки
-            pass
-
-
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 async def truncate_tables(
-    db_engine_generator: AsyncEngine,
+    db_engine: AsyncEngine,
 ) -> AsyncGenerator[None, None]:
-    """
-    Clears all tables managed by Base.metadata before each test.
+    """Clear all tables managed by 'Base.metadata' before each test.
+
     Relies on transaction rollback in db_session for primary isolation.
     This provides an extra layer of safety.
+
+    Args:
+        db_engine (AsyncEngine): Configured async test engine.
+
+    Yields:
+        Iterator[AsyncGenerator[None, None]]: Transfer control to the test.
     """
     logger.info("Start clearing tables (TRUNCATE) before test")
     table_names: list[str] = list(Base.metadata.tables.keys())
 
     if not table_names:
-        logger.warning("No tables found in Base.metadata to truncate.")
+        logger.warning("No tables found in 'Base.metadata' to truncate.")
         yield  # просто выполняем тест, если таблиц нет
         return  # чтобы управление не вернулось снова сюда после теста
 
@@ -115,8 +141,8 @@ async def truncate_tables(
     logger.info("Truncating tables: %s", ", ".join(table_names))
     try:
         # begin() для автоматического commit/rollback транзакции очистки
-        async with db_engine_generator.begin() as conn:
-            logger.info("Run TRUNCATE on engine '%s'", db_engine_generator)
+        async with db_engine.begin() as conn:
+            logger.info("Run TRUNCATE on engine '%s'", db_engine)
             await conn.execute(truncate_sql)
         logger.info("Tables truncated successfully.")
 
@@ -128,22 +154,30 @@ async def truncate_tables(
 
 
 @pytest.fixture(scope="function")
-async def db_session(
-    db_engine_generator: AsyncEngine,
+async def managed_db_session(
+    db_engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncSession, None]:
-    """
-    Provides a test database session with automatic rollback via
+    """Async session with transaction management.
+
+    Provide a test database session with automatic rollback via
     nested transactions.
+
+    Args:
+        db_engine (AsyncEngine): Configured async test engine.
+
+    Yields:
+        Iterator[AsyncGenerator[AsyncSession, None]]: Opened async session
+            wrapped in a nested transaction.
     """
     async_session_maker = async_sessionmaker(
-        bind=db_engine_generator,
+        bind=db_engine,
         expire_on_commit=False,  # чтобы объекты были доступны после rollback
     )
 
     # создаем сессию из фабрики
     async with async_session_maker() as session:
         session_id = id(session)
-        logger.debug("Test session '%s' created", session_id)
+        logger.debug("Managed async test session '%s' created", session_id)
         # открываем вложенную транзакцию (SAVEPOINT)
         async with session.begin_nested():
             logger.debug(
@@ -157,31 +191,44 @@ async def db_session(
             session_id,
         )
     # основная транзакция сессии, если бы была, осталась бы нетронутой
-    logger.debug("Test session '%s' closed", session_id)
+    logger.debug("Managed async test session '%s' closed", session_id)
 
 
 @pytest.fixture(scope="function")
-async def raw_db_session(
-    db_engine_generator: AsyncEngine,
+async def db_session(
+    db_engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncSession, None]:
-    """Provides a raw AsyncSession without automatic transaction management."""
+    """Async session without transaction management.
+
+    Use this inside the UoW that controls transactions.
+
+    Args:
+        db_engine (AsyncEngine): Configured async test engine.
+
+    Yields:
+        Iterator[AsyncGenerator[AsyncSession, None]]: Opened async session.
+    """
     async_session_maker = async_sessionmaker(
-        bind=db_engine_generator,
+        bind=db_engine,
         expire_on_commit=False,
     )
 
     async with async_session_maker() as session:
         session_id = id(session)
-        logger.debug("Raw session '%s' created", session_id)
+        logger.debug("Async test session '%s' created", session_id)
         try:
             yield session
         finally:
-            logger.debug("Raw session '%s' closed", session_id)
+            logger.debug("Async test session '%s' closed", session_id)
 
 
 @pytest.fixture(scope="function")
 async def httpx_test_client() -> AsyncGenerator[AsyncClient, None]:
-    """Provides an HTTPX client for testing the FastAPI application."""
+    """Create HTTPX client for testing the FastAPI application.
+
+    Yields:
+        Iterator[AsyncGenerator[AsyncClient, None]]: Configured HTTPX client.
+    """
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
