@@ -21,6 +21,7 @@ dev = [
     "pip-tools",
     "pipdeptree",
     "pytest",
+    "pytest-asyncio",
 
     # linters
     "mypy",
@@ -77,6 +78,7 @@ select = [
     "W",   # pycodestyle: Предупреждения
     "F",   # pyflakes
     "PIE", # flake8-pie
+    "D",   # pydocstyle: flake8-docstrings
 ]
 
 [tool.pytest.ini_options]
@@ -91,10 +93,10 @@ python_functions = ["test_*"]
 addopts = "-sv --maxfail=3"
 
 console_output_style = "progress"
-# log_cli = true
-# log_cli_level = "DEBUG"
-# log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
-# log_cli_date_format = "%Y-%m-%d_%H:%M:%S"
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
+log_cli_date_format = "%Y-%m-%d_%H:%M:%S"
 
 markers = [
     "slow: marks tests as slow (use '-m \"not slow\"' to skip)",
@@ -103,3 +105,6 @@ markers = [
 
 junit_family = "xunit2"
 junit_logging = "all"
+
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "session"
