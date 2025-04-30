@@ -25,8 +25,7 @@ AsyncSessionFactory: async_sessionmaker[AsyncSession] = async_sessionmaker(
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Dependency that provides asynchronous SQLAlchemy database session.
+    """Dependency that provides asynchronous SQLAlchemy database session.
 
     Yields:
         AsyncSession: SQLAlchemy AsyncSession instance for database operations.

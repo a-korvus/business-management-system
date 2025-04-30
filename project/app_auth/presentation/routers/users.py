@@ -32,8 +32,7 @@ router = APIRouter(
 async def read_users_me(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
-    """
-    Return data of the current user.
+    """Return data of the current user.
 
     Args:
         current_user (Annotated[UserRead, Depends): Dependency to get
@@ -49,8 +48,7 @@ async def read_users_me(
 async def list_all_users(
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> list[UserRead]:
-    """
-    Get the list of all users from DB.
+    """Get the list of all users from DB.
 
     Args:
         user_service (Annotated[UserService, Depends): App User service.

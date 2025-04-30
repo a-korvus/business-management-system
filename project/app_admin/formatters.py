@@ -6,8 +6,7 @@ from zoneinfo import ZoneInfo
 
 
 def format_datetime_local(model: type, field_name: Any) -> str:
-    """
-    Format datetime field to string value.
+    """Format datetime field to string value.
 
     Datetime field value must contain the timezone.
 

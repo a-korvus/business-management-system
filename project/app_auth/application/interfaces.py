@@ -28,18 +28,22 @@ class AbstractUserRepository(abc.ABC):
 
     @abc.abstractmethod
     async def get_by_id(self, user_id: uuid.UUID) -> "User" | None:
+        """Get User by its ID."""
         raise NotImplementedError
 
     @abc.abstractmethod
     async def get_by_email(self, email: str) -> "User" | None:
+        """Get User by its email."""
         raise NotImplementedError
 
     @abc.abstractmethod
     async def list_all(self) -> list["User"]:
+        """Get list of User objects."""
         raise NotImplementedError
 
     @abc.abstractmethod
     async def add(self, user: "User") -> None:
+        """Add User object to session."""
         raise NotImplementedError
 
 
@@ -49,6 +53,7 @@ class AbstractUnitOfWork(abc.ABC):
     users: AbstractUserRepository
 
     async def __aenter__(self) -> Self:
+        """Enter to async context manager."""
         raise NotImplementedError
 
     async def __aexit__(
@@ -57,12 +62,15 @@ class AbstractUnitOfWork(abc.ABC):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        """Exit from async context manager."""
         raise NotImplementedError
 
     @abc.abstractmethod
     async def commit(self) -> None:
+        """Commit changes within a session."""
         raise NotImplementedError
 
     @abc.abstractmethod
     async def rollback(self) -> None:
+        """Rollback changes within a session."""
         raise NotImplementedError

@@ -71,8 +71,7 @@ async def get_current_user(
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
-    """
-    Get current user from DB based on token data.
+    """Get current user from DB based on token data.
 
     Args:
         token_data (Annotated[TokenData, Depends): Token data as schema.

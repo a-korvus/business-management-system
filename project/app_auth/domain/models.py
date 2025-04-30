@@ -77,8 +77,7 @@ class User(Base):
         hasher: "PasswordHasher",
         **kwargs: Any,
     ) -> None:
-        """
-        Initialize the user.
+        """Initialize the user.
 
         Handles standard attribute assignments via super(), then performs
         custom logic for email validation, password hashing,

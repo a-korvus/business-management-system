@@ -172,7 +172,7 @@ class Role(Base):
 
 
 class News(Base):
-    """News in the"""
+    """News in the system."""
 
     __tablename__ = "news"
 

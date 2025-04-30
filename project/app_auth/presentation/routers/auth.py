@@ -40,8 +40,7 @@ async def register(
     user_in: UserCreate,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> UserRead:
-    """
-    Self-registration of a new user in the system.
+    """Self-registration of a new user in the system.
 
     Args:
         user_in (UserCreate): User input data.

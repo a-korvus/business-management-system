@@ -17,6 +17,7 @@ class UserNotFound(DomainError):
         user_id: uuid.UUID | str | None = None,
         email: str | None = None,
     ):
+        """Initialize the exception."""
         self.user_id = user_id
         self.email = email
 
@@ -32,6 +33,7 @@ class EmailAlreadyExists(DomainError):
     """Exception if the email is already in use."""
 
     def __init__(self, email: str):
+        """Initialize the exception."""
         self.email = email
 
         super().__init__(f"Email '{email}' is already registered.")
@@ -41,6 +43,7 @@ class AuthenticationError(DomainError):
     """Exception if the authentication error occurs."""
 
     def __init__(self, msg: str = "Invalid credentials") -> None:
+        """Initialize the exception."""
         super().__init__(msg)
 
 
@@ -48,4 +51,5 @@ class InvalidPasswordFormatError(DomainError):
     """Incorrect format of saved password hash."""
 
     def __init__(self, msg: str = "Invalid stored password format") -> None:
+        """Initialize the exception."""
         super().__init__(msg)

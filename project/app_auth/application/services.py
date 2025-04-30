@@ -34,12 +34,12 @@ class AuthService:
         uow: AbstractUnitOfWork,
         hasher: PasswordHasher,
     ) -> None:
+        """Initialize the service object. Set UoW and password hasher."""
         self.uow = uow
         self.hasher = hasher
 
     async def register_user(self, user_data: UserCreate) -> UserRead:
-        """
-        Register a new user.
+        """Register a new user.
 
         Args:
             user_data (UserCreate): New user data as pydantic schema.
@@ -75,8 +75,7 @@ class AuthService:
             return UserRead.model_validate(new_user)
 
     async def authenticate_user(self, credentials: LoginSchema) -> Token:
-        """
-        Authenticate the user.
+        """Authenticate the user.
 
         Args:
             credentials (LoginSchema): User credentials as pydantic schema.
@@ -122,6 +121,7 @@ class UserService:
     """Application service for managing users."""
 
     def __init__(self, uow: AbstractUnitOfWork) -> None:
+        """Initialize the service object. Set UoW."""
         self.uow = uow
 
     async def _search_user(
@@ -129,8 +129,7 @@ class UserService:
         user_id: uuid.UUID | None = None,
         email: str | None = None,
     ) -> User:
-        """
-        Search the user in DB by his ID or email.
+        """Search the user in DB by his ID or email.
 
         Args:
             user_id (uuid.UUID | None, optional): User ID in DB.
@@ -156,8 +155,7 @@ class UserService:
         return user
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
-        """
-        Get user by ID.
+        """Get user by ID.
 
         Args:
             user_id (uuid.UUID): User ID in DB.
@@ -169,8 +167,7 @@ class UserService:
             return await self.uow.users.get_by_id(user_id)
 
     async def get_user_by_email(self, email: str) -> User | None:
-        """
-        Get user by email.
+        """Get user by email.
 
         Args:
             email (str): User email in DB.
@@ -182,8 +179,7 @@ class UserService:
             return await self.uow.users.get_by_email(email)
 
     async def get_all_users(self) -> list[UserRead]:
-        """
-        Get all users from DB.
+        """Get all users from DB.
 
         Returns:
             list[UserRead]: All users as pydantic schemas.
@@ -197,8 +193,7 @@ class UserService:
         user_id: uuid.UUID | None = None,
         email: str | None = None,
     ) -> bool:
-        """
-        Deactivate the user.
+        """Deactivate the user.
 
         Args:
             user_id (uuid.UUID | None, optional): User ID in DB.
@@ -219,8 +214,7 @@ class UserService:
         user_id: uuid.UUID | None = None,
         email: str | None = None,
     ) -> bool:
-        """
-        Activate the user.
+        """Activate the user.
 
         Args:
             user_id (uuid.UUID | None, optional): User ID in DB.

@@ -60,8 +60,7 @@ if settings.DEV_MODE:
 
 @lru_cache(maxsize=128)
 def get_logger(name: str) -> logging.Logger:
-    """
-    Create configured logger.
+    """Create configured logger.
 
     Args:
         name (str): Set a name for a new logger.

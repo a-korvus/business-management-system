@@ -31,7 +31,7 @@ class SAUnitOfWork(AbstractUnitOfWork):
         self._session = session
 
     async def __aenter__(self) -> Self:
-        """Enter to the context manager. Create a session and repositories."""
+        """Enter to context manager. Create a session and repositories."""
         if self._session_factory:
             self._session = self._session_factory()
 
@@ -45,8 +45,7 @@ class SAUnitOfWork(AbstractUnitOfWork):
         exc_val: BaseException | None,
         exc_tb: types.TracebackType | None,
     ) -> None:
-        """
-        Exit context manager.
+        """Exit from context manager.
 
         Rollback if error occurs. Close session anyway.
         """

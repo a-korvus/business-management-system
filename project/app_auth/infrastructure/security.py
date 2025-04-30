@@ -1,5 +1,4 @@
-"""
-Implementation of the PasswordHasher interface.
+"""Implementation of the PasswordHasher interface.
 
 Using 'Argon2id' from the 'cryptography' library.
 """
@@ -19,8 +18,7 @@ logger = get_logger(__name__)
 
 
 class CryptographyPasswordHasher(PasswordHasher):
-    """
-    Implementation password hasher using 'cryptography' and 'Agron2id'.
+    """Implementation password hasher using 'cryptography' and 'Agron2id'.
 
     Stores salt and hash in one string <base64(salt):base64(hash)>.
     """
@@ -33,6 +31,7 @@ class CryptographyPasswordHasher(PasswordHasher):
         salt_length: int = settings.AUTH.ARGON2_SALT_LENGTH,
         hash_length: int = settings.AUTH.ARGON2_HASH_LENGTH,
     ) -> None:
+        """Initialize the password hasher."""
         self.time_cost = time_cost
         self.memory_cost = memory_cost
         self.parallelism = parallelism
@@ -41,8 +40,7 @@ class CryptographyPasswordHasher(PasswordHasher):
         # self.backend = None  # cryptography default backend OpenSSL
 
     def _get_argon2_instance(self, salt: bytes) -> Argon2id:
-        """
-        Create an 'Argon2id' instance with current parameters.
+        """Create an 'Argon2id' instance with current parameters.
 
         Args:
             salt (bytes): Random value.
@@ -60,8 +58,7 @@ class CryptographyPasswordHasher(PasswordHasher):
         )
 
     def hash_password(self, plain_pswrd: str) -> str:
-        """
-        Hash the password using Argon2id.
+        """Hash the password using Argon2id.
 
         Args:
             plain_pswrd (str): User input.
@@ -83,8 +80,7 @@ class CryptographyPasswordHasher(PasswordHasher):
         return f"{salt_b64}:{hash_b64}"
 
     def verify_password(self, plain_pswrd: str, stored_pswrd: str) -> bool:
-        """
-        Check that the hash of the entered password is equal to the saved one.
+        """Check the hash of the entered password is equal to the saved one.
 
         Args:
             plain_pswrd (str): User input.

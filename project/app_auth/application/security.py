@@ -26,8 +26,7 @@ def create_access_token(
     data: dict,
     expires_delta: timedelta | None = None,
 ) -> str:
-    """
-    Create JWT using Authlib.
+    """Create JWT using Authlib.
 
     Args:
         data (dict): Some useful data. 'sub' key required with user ID valiue.
@@ -67,8 +66,7 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> TokenData | None:
-    """
-    Decode and validate JWT.
+    """Decode and validate JWT.
 
     Args:
         token (str): Received JWT.

@@ -1,5 +1,4 @@
-"""
-Main project configuration file.
+"""Main project configuration file.
 
 Uses pydantic BaseSettings to load environment variables.
 Combines configurations for different parts of the project.
@@ -30,8 +29,7 @@ class PGConfig(BaseSettings):
 
     @property
     def url_async(self) -> str:
-        """
-        Config a link to postgres connection for asyncpg.
+        """Config a link to postgres connection for asyncpg.
 
         example: postgresql+asyncpg://postgres:postgres@localhost:5432/db_name
         """
@@ -71,8 +69,7 @@ class AuthConfig(BaseSettings):
 
 
 class ProjectSettings(BaseSettings):
-    """
-    Main project settings class.
+    """Main project settings class.
 
     Combines all other configurations and common settings.
     Loads settings from environment variables.

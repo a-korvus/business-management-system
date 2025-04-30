@@ -25,6 +25,7 @@ middlewares = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Implemetation of FastAPI app life cycle."""
     logger.info("Application startup.")
 
     yield
@@ -52,8 +53,7 @@ app_admin = Admin(
 
 @app.get("/health/", status_code=200, tags=["health check"])
 async def health_check() -> dict:
-    """
-    Use it endpoint to health check.
+    """Use it endpoint to health check.
 
     Returns:
         dict: {"status": "ok"} if the service is running.
