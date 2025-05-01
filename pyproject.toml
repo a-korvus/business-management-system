@@ -21,7 +21,9 @@ dev = [
     "pip-tools",
     "pipdeptree",
     "pytest",
+    "pytest-dotenv",
     "pytest-asyncio",
+    "faker",
 
     # linters
     "mypy",
@@ -85,7 +87,16 @@ select = [
 minversion = "8.0"
 pythonpath = [".", "project"]
 testpaths = ["tests"]
-norecursedirs = [".git", ".venv", "project"]
+norecursedirs = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "project",
+]
+env_files = [".env.test"]
+env_override_existing_values = true
 
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests"]

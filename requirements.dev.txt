@@ -49,6 +49,8 @@ dnspython==2.7.0
     # via email-validator
 email-validator==2.2.0
     # via fastapi
+faker==37.1.0
+    # via business-management-system (pyproject.toml)
 fastapi[all]==0.115.12
     # via business-management-system (pyproject.toml)
 fastapi-cli[standard]==0.0.7
@@ -162,11 +164,15 @@ pytest==8.3.5
     # via
     #   business-management-system (pyproject.toml)
     #   pytest-asyncio
+    #   pytest-dotenv
 pytest-asyncio==0.26.0
+    # via business-management-system (pyproject.toml)
+pytest-dotenv==0.5.2
     # via business-management-system (pyproject.toml)
 python-dotenv==1.1.0
     # via
     #   pydantic-settings
+    #   pytest-dotenv
     #   uvicorn
 python-multipart==0.0.20
     # via
@@ -221,6 +227,8 @@ typing-inspection==0.4.0
     # via
     #   pydantic
     #   pydantic-settings
+tzdata==2025.2
+    # via faker
 ujson==5.10.0
     # via fastapi
 uvicorn[standard]==0.34.2

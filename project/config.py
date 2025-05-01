@@ -22,15 +22,20 @@ class PGConfig(BaseSettings):
     DB_NAME: str = "my_db"
     USER: str = "task_user"
     PASSWORD: str = "some_pswr"
-
     DSN: PostgresDsn | None = None
+
+    # для админского движка в тестовом окружении
+    ADMIN_DB_NAME: str = "my_db"
+    ADMIN_USER: str = "task_user"
+    ADMIN_PASSWORD: str = "some_pswr"
 
     model_config = SettingsConfigDict(env_prefix="PG_", extra="allow")
 
     @property
     def url_async(self) -> str:
-        """Config a link to postgres connection for asyncpg.
+        """Use for postgres connection with 'asyncpg' driver.
 
+        In tests, data is pulled here to connect to the test database.
         example: postgresql+asyncpg://postgres:postgres@localhost:5432/db_name
         """
         if self.DSN:
@@ -40,6 +45,15 @@ class PGConfig(BaseSettings):
             "postgresql+asyncpg://"
             f"{self.USER}:{self.PASSWORD}@"
             f"{self.HOST}:{self.PORT}/{self.DB_NAME}"
+        )
+
+    @property
+    def admin_url_async(self) -> str:
+        """Use for admin postgres connection in tests."""
+        return (
+            "postgresql+asyncpg://"
+            f"{self.ADMIN_USER}:{self.ADMIN_PASSWORD}@"
+            f"{self.HOST}:{self.PORT}/{self.ADMIN_DB_NAME}"
         )
 
 
