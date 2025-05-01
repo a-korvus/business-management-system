@@ -1,11 +1,11 @@
 """Setup test DB.
 
+It is assumed that the test database is running on the same host and port
+as the main one.
 An independent engine is created to perform test environment setup.
 """
 
-import asyncio
 import logging
-import os
 
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -22,15 +22,6 @@ from project.config import settings
 from project.core.db.base import Base
 
 logger = logging.getLogger(__name__)
-
-ADMIN_DB_URL = settings.DB.url_async
-TEST_DB_NAME = os.getenv("PG_TEST_DB_NAME", "my_test_db")
-TEST_DB_USER = os.getenv("PG_TEST_USER", "test_user")
-TEST_DB_PASSWORD = os.getenv("PG_TEST_PASSWORD", "test_password")
-TEST_DB_URL = (
-    f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PASSWORD}@"
-    f"{settings.DB.HOST}:{settings.DB.PORT}/{TEST_DB_NAME}"
-)
 
 
 async def create_test_db_and_user(
@@ -136,24 +127,32 @@ async def setup_db_before_tests() -> None:
     Raises:
         RuntimeError: Exceptions raised during setup.
     """
-    logger.info("Start setup_environment_for_tests")
+    logger.info("Start setup environment for tests")
+
+    admin_url = settings.DB.admin_url_async
+    test_db_name = settings.DB.DB_NAME
+    test_user = settings.DB.USER
+    test_password = settings.DB.PASSWORD
+    test_db_url = settings.DB.url_async
+
     test_engine = None
+
     try:
         # создание БД и пользователя
         await create_test_db_and_user(
-            admin_connection_url=ADMIN_DB_URL,
-            test_db=TEST_DB_NAME,
-            test_user=TEST_DB_USER,
-            test_password=TEST_DB_PASSWORD,
+            admin_connection_url=admin_url,
+            test_db=test_db_name,
+            test_user=test_user,
+            test_password=test_password,
         )
         logger.info("Test database and user setup complete.")
-        logger.info("URL to connect to the test DB: '%s'", TEST_DB_URL)
+        logger.info("URL to connect to the test DB: '%s'", test_db_url)
 
         # создание таблиц в тестовой БД
-        test_engine = create_async_engine(url=TEST_DB_URL)
+        test_engine = create_async_engine(url=test_db_url)
 
         async with test_engine.begin() as conn:
-            logger.info("Creating tables in the test DB '%s'.", TEST_DB_NAME)
+            logger.info("Creating tables in the test DB '%s'.", test_db_url)
             # запускаем синхронный create_all через run_sync
             # метод create_all работает с объектом MetaData,
             # поэтому остается синхронным
@@ -273,28 +272,18 @@ async def teardown_db_after_tests() -> None:
         RuntimeError: Exception occurred while cleanup the test environment.
     """
     logger.info("Starting test environment cleanup after tests.")
+
+    admin_url = settings.DB.admin_url_async
+    test_db_name = settings.DB.DB_NAME
+    test_user = settings.DB.USER
+
     try:
         await cleanup_test_environment(
-            admin_connection_url=ADMIN_DB_URL,
-            test_db=TEST_DB_NAME,
-            test_user=TEST_DB_USER,
+            admin_connection_url=admin_url,
+            test_db=test_db_name,
+            test_user=test_user,
         )
         logger.info("Test environment cleanup finished successfully.")
     except RuntimeError:
         logger.exception("Error while cleanup test environment")
         raise
-
-
-async def main() -> None:
-    """Run setup, simulate tests, and run teardown."""
-    await setup_db_before_tests()
-    print("\n>>> The test environment is set up, you can run tests <<<\n")
-    # тут выполняются тесты
-    input(">>> Press Enter to start cleaning the environment <<<\n")
-    await teardown_db_after_tests()
-
-
-if __name__ == "__main__":
-    # export PROJECT_DEV_MODE=1
-    # echo $PROJECT_DEV_MODE
-    asyncio.run(main())

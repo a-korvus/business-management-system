@@ -1,19 +1,25 @@
 """Pytest configuration settings for 'app_auth' tests."""
 
-from typing import Callable
+from typing import Any, Callable
 
 import pytest
+from faker import Faker
+from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project.app_auth.application.interfaces import (
     AbstractUnitOfWork,
     PasswordHasher,
 )
-from project.app_auth.application.services import AuthService
+from project.app_auth.application.schemas import UserCreate
+from project.app_auth.application.services import AuthService, UserService
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
+from project.config import settings
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
+
+AUTH_PREFIX = settings.AUTH.PREFIX_AUTH
 
 
 class FakePasswordHasher(PasswordHasher):
@@ -35,6 +41,21 @@ def fake_hasher() -> FakePasswordHasher:
 
 
 @pytest.fixture(scope="function")
+def fake_instance() -> Faker:
+    """Get Faker instance."""
+    return Faker()
+
+
+@pytest.fixture(scope="function")
+def fake_user_schema(fake_instance: Faker) -> UserCreate:
+    """Define the fake user for tests."""
+    return UserCreate(
+        email=fake_instance.email(),
+        password=fake_instance.password(),
+    )
+
+
+@pytest.fixture(scope="function")
 def uow_factory(
     db_session: AsyncSession,
 ) -> Callable[[], AbstractUnitOfWork]:
@@ -49,7 +70,7 @@ def uow_factory(
 
 
 @pytest.fixture(scope="function")
-def get_test_auth_service(
+def verify_auth_service(
     uow_factory: Callable[[], AbstractUnitOfWork],
     fake_hasher: PasswordHasher,
 ) -> AuthService:
@@ -59,3 +80,46 @@ def get_test_auth_service(
         uow=uow_instance,
         hasher=fake_hasher,
     )
+
+
+@pytest.fixture(scope="function")
+def verify_user_service(
+    uow_factory: Callable[[], AbstractUnitOfWork],
+) -> UserService:
+    """Get user service instance."""
+    return UserService(uow=uow_factory())
+
+
+async def get_auth_token(
+    httpx_client: AsyncClient,
+    email: str,
+    password: str,
+) -> str:
+    """Get authentication token."""
+    response = await httpx_client.post(
+        url=f"{AUTH_PREFIX}/login/",
+        data={"username": email, "password": password},
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+
+@pytest.fixture(scope="function")
+async def authenticated_user(
+    httpx_test_client: AsyncClient,
+    fake_user_schema: UserCreate,
+) -> dict[str, Any]:
+    """Create new user and return this user data."""
+    response: Response = await httpx_test_client.post(
+        url=f"{AUTH_PREFIX}/register/", json=fake_user_schema.model_dump()
+    )
+    assert response.status_code == 201
+
+    new_user_data: dict = response.json()
+    token = await get_auth_token(
+        httpx_client=httpx_test_client,
+        email=fake_user_schema.email,
+        password=fake_user_schema.password,
+    )
+
+    return {"user": new_user_data, "token": token}

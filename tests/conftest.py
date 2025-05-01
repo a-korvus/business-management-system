@@ -21,11 +21,11 @@ from project.app_org.domain.models import (  # noqa
     News,
     Role,
 )
+from project.config import settings
 from project.core.db.base import Base
 from project.core.log_config import get_logger
 from project.main import app
 from tests.utils.setup_db import (
-    TEST_DB_URL,
     setup_db_before_tests,
     teardown_db_after_tests,
 )
@@ -63,7 +63,7 @@ async def db_engine(
 
     try:
         await setup_db_before_tests()
-        test_engine = create_async_engine(url=TEST_DB_URL)
+        test_engine = create_async_engine(url=settings.DB.url_async)
         logger.info("Test engine created successfully.")
 
         async def async_finalizer() -> None:
@@ -151,47 +151,6 @@ async def truncate_tables(
     except Exception as e:  # noqa
         logger.exception("Error during table truncation: %s", e)
         pytest.fail(f"Failed to truncate tables: {e}")
-
-
-@pytest.fixture(scope="function")
-async def managed_db_session(
-    db_engine: AsyncEngine,
-) -> AsyncGenerator[AsyncSession, None]:
-    """Async session with transaction management.
-
-    Provide a test database session with automatic rollback via
-    nested transactions.
-
-    Args:
-        db_engine (AsyncEngine): Configured async test engine.
-
-    Yields:
-        Iterator[AsyncGenerator[AsyncSession, None]]: Opened async session
-            wrapped in a nested transaction.
-    """
-    async_session_maker = async_sessionmaker(
-        bind=db_engine,
-        expire_on_commit=False,  # чтобы объекты были доступны после rollback
-    )
-
-    # создаем сессию из фабрики
-    async with async_session_maker() as session:
-        session_id = id(session)
-        logger.debug("Managed async test session '%s' created", session_id)
-        # открываем вложенную транзакцию (SAVEPOINT)
-        async with session.begin_nested():
-            logger.debug(
-                "Nested transaction (SAVEPOINT) started for session '%s'",
-                session_id,
-            )
-            yield session  # отдаем сессию тесту
-            # после yield неявный rollback SAVEPOINT
-        logger.debug(
-            "Nested transaction (SAVEPOINT) finished for session '%s'",
-            session_id,
-        )
-    # основная транзакция сессии, если бы была, осталась бы нетронутой
-    logger.debug("Managed async test session '%s' closed", session_id)
 
 
 @pytest.fixture(scope="function")
