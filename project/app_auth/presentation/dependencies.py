@@ -23,6 +23,10 @@ from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
 
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.AUTH.PREFIX_AUTH}/login/",
+)
+
 
 def get_uow() -> AbstractUnitOfWork:
     """Get Unit of Work instance."""
@@ -48,11 +52,6 @@ def get_user_service(
 ) -> UserService:
     """Get user service instance."""
     return UserService(uow=uow)
-
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.AUTH.PREFIX_AUTH}/login/",
-)
 
 
 async def get_current_user_data(

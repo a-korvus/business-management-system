@@ -30,7 +30,7 @@ router = APIRouter(
 
 
 @router.post(
-    path="/register",
+    path="/register/",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
     summary="Register new user.",
@@ -75,7 +75,7 @@ async def register(
 
 
 @router.post(
-    path="/login",
+    path="/login/",
     response_model=Token,
     summary="Login for access token.",
     description="Authenticate user with email and password "
