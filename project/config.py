@@ -94,6 +94,7 @@ class ProjectSettings(BaseSettings):
     ADMIN_SECRET_KEY: str = ""
     MASTER_EMAIL: str = ""
     MASTER_PASSWORD: str = ""
+    PREFIX_ORG: str = "/org"
 
     # вложенные конфиги
     DB: PGConfig = PGConfig()

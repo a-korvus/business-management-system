@@ -104,7 +104,7 @@ class Department(Base):
         default=None,
     )
 
-    command: Mapped[Command | None] = relationship(
+    command: Mapped[Command] = relationship(
         back_populates="departments",
     )
     roles: Mapped[list[Role]] = relationship(
@@ -161,7 +161,7 @@ class Role(Base):
         default=None,
     )
 
-    department: Mapped[Department | None] = relationship(
+    department: Mapped[Department] = relationship(
         back_populates="roles",
     )
     users: Mapped[list[User]] = relationship(
