@@ -2,11 +2,7 @@
 
 import uuid
 
-
-class DomainError(Exception):
-    """Base class for domain exeptions."""
-
-    ...
+from project.core.exceptions import DomainError
 
 
 class UserNotFound(DomainError):
