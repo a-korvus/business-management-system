@@ -4,6 +4,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from project.app_org.application.interfaces import (
     AbsCommandRepository,
@@ -28,6 +29,21 @@ class SACommandRepo(AbsCommandRepository):
         """Get the command by ID."""
         result = await self._session.execute(
             select(Command).where(Command.id == command_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_with_departments(
+        self,
+        command_id: uuid.UUID,
+    ) -> Command | None:
+        """Get the command by ID.
+
+        Use options to load related departments.
+        """
+        result = await self._session.execute(
+            select(Command)
+            .options(selectinload(Command.departments))
+            .where(Command.id == command_id)
         )
         return result.scalar_one_or_none()
 
@@ -65,6 +81,21 @@ class SADepartmentRepo(AbsDepartmentRepository):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_with_roles(
+        self,
+        department_id: uuid.UUID,
+    ) -> Department | None:
+        """Get the department by ID.
+
+        Use options to load related roles.
+        """
+        result = await self._session.execute(
+            select(Department)
+            .options(selectinload(Department.roles))
+            .where(Department.id == department_id)
+        )
+        return result.scalar_one_or_none()
+
     async def list_all(self) -> list[Department]:
         """Get all departments."""
         result = await self._session.execute(select(Department))
@@ -89,6 +120,18 @@ class SARoleRepo(AbsRoleRepository):
         """Get the role by ID."""
         result = await self._session.execute(
             select(Role).where(Role.id == role_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_with_users(
+        self,
+        role_id: uuid.UUID,
+    ) -> Role | None:
+        """Get Role by its ID with related users."""
+        result = await self._session.execute(
+            select(Role)
+            .options(selectinload(Role.users))
+            .where(Role.id == role_id)
         )
         return result.scalar_one_or_none()
 

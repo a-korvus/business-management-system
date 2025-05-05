@@ -23,17 +23,19 @@ class SAOrgUnitOfWork(AbsUnitOfWork):
         session: AsyncSession | None = None,
     ) -> None:
         """Initialize the unit of work."""
-        if session_factory is None and session is None:
+        if not any((session_factory, session)):
             raise ValueError(f"{self.__class__.__name__} has not session!")
 
-        if session_factory and session:
+        if all((session_factory, session)):
             raise ValueError(
                 f"{self.__class__.__name__} must have either a "
-                "session factory or a session, not both!"
+                "'session_factory' or a 'session', not both!"
             )
 
         self._session_factory = session_factory
-        self._session = session
+        self._external_session = session
+
+        self._session: AsyncSession | None = session
 
     async def __aenter__(self) -> Self:
         """Enter to context manager. Create a session and repositories."""
@@ -57,11 +59,16 @@ class SAOrgUnitOfWork(AbsUnitOfWork):
 
         Rollback if error occurs. Close session anyway.
         """
-        if self._session:
+        if not self._session:
+            return
+
+        try:
             if exc_type:
                 await self.rollback()
-            await self._session.close()
-            self._session = None
+        finally:
+            if self._session_factory:
+                await self._session.close()
+                self._session = None
 
     async def commit(self) -> None:
         """Commit the current transaction."""

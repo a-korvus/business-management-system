@@ -24,6 +24,14 @@ class RoleService:
         async with self.uow as uow:
             return await uow.roles.get_by_id(role_id)
 
+    async def get_by_id_with_users(
+        self,
+        role_id: uuid.UUID,
+    ) -> Role | None:
+        """Get role by ID. Use options to load related users."""
+        async with self.uow as uow:
+            return await uow.roles.get_by_id_with_users(role_id)
+
     async def get_all(self) -> list[Role]:
         """Get all roles from DB."""
         async with self.uow as uow:
@@ -45,6 +53,11 @@ class RoleService:
             new_role = Role(**data.model_dump())
             await uow.roles.add(new_role)
             await uow.commit()
+            await uow.refresh(new_role, attribute_names=["users"])
+            logger.debug(
+                "Role instance '%s' refreshed after creating.",
+                new_role.id,
+            )
 
             return new_role
 
@@ -68,9 +81,18 @@ class RoleService:
                     raise DepartmentNotFound(department_id=data.department_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            for field_name, field_value in update_data.items():
-                setattr(upd_role, field_name, field_value)
+            needs_update = False
 
-            await uow.commit()
+            for field_name, field_value in update_data.items():
+                if getattr(upd_role, field_name) != field_value:
+                    setattr(upd_role, field_name, field_value)
+                    needs_update = True
+
+            if needs_update:
+                await uow.commit()
+                await uow.refresh(upd_role)
+                logger.debug(
+                    "Role instance '%s' refreshed after update.", role_id
+                )
 
             return upd_role

@@ -31,6 +31,14 @@ class DepartmentService:
         async with self.uow as uow:
             return await uow.departments.get_by_id(department_id)
 
+    async def get_by_id_with_roles(
+        self,
+        department_id: uuid.UUID,
+    ) -> Department | None:
+        """Get department by ID. Use options to load related roles."""
+        async with self.uow as uow:
+            return await uow.departments.get_by_id_with_roles(department_id)
+
     async def get_all(self) -> list[Department]:
         """Get all departments from DB."""
         async with self.uow as uow:
@@ -49,7 +57,11 @@ class DepartmentService:
             new_department = Department(**data.model_dump())
             await uow.departments.add(new_department)
             await uow.commit()
-
+            await uow.refresh(new_department, attribute_names=["roles"])
+            logger.debug(
+                "Department instance '%s' refreshed after creating.",
+                new_department.id,
+            )
             return new_department
 
     async def update(
@@ -71,10 +83,20 @@ class DepartmentService:
                     raise CommandNotFound(command_id=data.command_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            for field_name, field_value in update_data.items():
-                setattr(upd_department, field_name, field_value)
+            needs_update = False
 
-            await uow.commit()
+            for field_name, field_value in update_data.items():
+                if getattr(upd_department, field_name) != field_value:
+                    setattr(upd_department, field_name, field_value)
+                    needs_update = True
+
+            if needs_update:
+                await uow.commit()
+                await uow.refresh(upd_department)
+                logger.debug(
+                    "Department instance '%s' refreshed after update.",
+                    department_id,
+                )
 
             return upd_department
 
@@ -97,7 +119,9 @@ class DepartmentService:
     ) -> Department:
         """Add role to the department."""
         async with self.uow as uow:
-            department = await uow.departments.get_by_id(department_id)
+            department = await uow.departments.get_by_id_with_roles(
+                department_id=department_id,
+            )
             if not department:
                 raise DepartmentNotFound(department_id=department_id)
 
@@ -129,7 +153,9 @@ class DepartmentService:
     ) -> Department:
         """Exclude department from the command."""
         async with self.uow as uow:
-            department = await uow.departments.get_by_id(department_id)
+            department = await uow.departments.get_by_id_with_roles(
+                department_id=department_id,
+            )
             if not department:
                 raise DepartmentNotFound(department_id=department_id)
 

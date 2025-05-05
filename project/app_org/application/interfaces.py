@@ -20,6 +20,14 @@ class AbsCommandRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def get_by_id_with_departments(
+        self,
+        command_id: uuid.UUID,
+    ) -> Command | None:
+        """Get Command by its ID with related departments."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def get_by_name(self, name: str) -> Command | None:
         """Get Command by its name."""
         raise NotImplementedError
@@ -44,6 +52,14 @@ class AbsDepartmentRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def get_by_id_with_roles(
+        self,
+        department_id: uuid.UUID,
+    ) -> Department | None:
+        """Get Department by its ID with related roles."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def list_all(self) -> list[Department]:
         """Get list of Department objects."""
         raise NotImplementedError
@@ -60,6 +76,14 @@ class AbsRoleRepository(abc.ABC):
     @abc.abstractmethod
     async def get_by_id(self, role_id: uuid.UUID) -> Role | None:
         """Get Role by its ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_by_id_with_users(
+        self,
+        role_id: uuid.UUID,
+    ) -> Role | None:
+        """Get Role by its ID with related users."""
         raise NotImplementedError
 
     @abc.abstractmethod

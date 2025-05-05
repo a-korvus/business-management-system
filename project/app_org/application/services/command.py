@@ -31,6 +31,14 @@ class CommandService:
         async with self.uow as uow:
             return await uow.commands.get_by_id(command_id)
 
+    async def get_by_id_with_departments(
+        self,
+        command_id: uuid.UUID,
+    ) -> Command | None:
+        """Get command by ID. Use options to load related departments."""
+        async with self.uow as uow:
+            return await uow.commands.get_by_id_with_departments(command_id)
+
     async def get_by_name(self, name: str) -> Command | None:
         """Get command by name."""
         async with self.uow as uow:
@@ -53,7 +61,11 @@ class CommandService:
             new_command = Command(**data.model_dump())
             await uow.commands.add(new_command)
             await uow.commit()
-
+            await uow.refresh(new_command, attribute_names=["departments"])
+            logger.debug(
+                "Command instance '%s' refreshed after creating.",
+                new_command.id,
+            )
             return new_command
 
     async def update(
@@ -77,10 +89,19 @@ class CommandService:
                     raise CommandNameExistsError(name=data.name)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            for field_name, field_value in update_data.items():
-                setattr(upd_command, field_name, field_value)
+            needs_update = False
 
-            await uow.commit()
+            for field_name, field_value in update_data.items():
+                if getattr(upd_command, field_name) != field_value:
+                    setattr(upd_command, field_name, field_value)
+                    needs_update = True
+
+            if needs_update:
+                await uow.commit()
+                await uow.refresh(upd_command)
+                logger.debug(
+                    "Command instance '%s' refreshed after update.", command_id
+                )
 
             return upd_command
 
@@ -103,7 +124,7 @@ class CommandService:
     ) -> Command:
         """Add department to the command."""
         async with self.uow as uow:
-            command = await uow.commands.get_by_id(command_id)
+            command = await uow.commands.get_by_id_with_departments(command_id)
             if not command:
                 raise CommandNotFound(command_id=command_id)
 
@@ -137,7 +158,7 @@ class CommandService:
     ) -> Command:
         """Exclude department from the command."""
         async with self.uow as uow:
-            command = await uow.commands.get_by_id(command_id)
+            command = await uow.commands.get_by_id_with_departments(command_id)
             if not command:
                 raise CommandNotFound(command_id=command_id)
 
