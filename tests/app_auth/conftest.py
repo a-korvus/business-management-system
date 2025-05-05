@@ -12,7 +12,8 @@ from project.app_auth.application.interfaces import (
     PasswordHasher,
 )
 from project.app_auth.application.schemas import UserCreate
-from project.app_auth.application.services import AuthService, UserService
+from project.app_auth.application.services.auth import AuthService
+from project.app_auth.application.services.users import UserService
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.config import settings
 from project.core.log_config import get_logger

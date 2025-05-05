@@ -12,18 +12,17 @@ from project.app_auth.application.interfaces import (
     PasswordHasher,
 )
 from project.app_auth.application.schemas import (
-    ProfileRead,
     ProfileUpdate,
     UserCreate,
     UserRead,
 )
-from project.app_auth.application.services import AuthService, UserService
-from project.app_auth.domain.models import User
+from project.app_auth.application.services.auth import AuthService
+from project.app_auth.application.services.users import UserService
+from project.app_auth.domain.models import Profile, User
 
-pytestmark = pytest.mark.anyio
+pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
 
-@pytest.mark.usefixtures("truncate_tables")
 async def test_get_user_by_id(
     verify_auth_service: AuthService,
     verify_user_service: UserService,
@@ -42,7 +41,6 @@ async def test_get_user_by_id(
     assert user.email == created_user_schema.email
 
 
-@pytest.mark.usefixtures("truncate_tables")
 async def test_get_user_by_email(
     verify_user_service: UserService,
     fake_user_schema: UserCreate,
@@ -66,7 +64,6 @@ async def test_get_user_by_email(
     assert user.email == fake_user_schema.email
 
 
-@pytest.mark.usefixtures("truncate_tables")
 async def test_get_all_users(
     verify_user_service: UserService,
     fake_user_schema: UserCreate,
@@ -83,7 +80,11 @@ async def test_get_all_users(
             )
         )
     users: list[User] = [
-        User(schema.email, schema.password, hasher=fake_hasher)
+        User(
+            email=schema.email,
+            plain_password=schema.password,
+            hasher=fake_hasher,
+        )
         for schema in schemas
     ]
     db_session.add_all(users)
@@ -97,7 +98,6 @@ async def test_get_all_users(
         assert isinstance(stored_user, UserRead)
 
 
-@pytest.mark.usefixtures("truncate_tables")
 async def test_deactivate_activate_user(
     verify_user_service: UserService,
     uow_factory: Callable[[], AbstractUnitOfWork],
@@ -137,15 +137,14 @@ async def test_deactivate_activate_user(
     assert stored_user.is_active is True
 
 
-@pytest.mark.usefixtures("truncate_tables")
-async def test_update_user_profile(
+async def test_update_profile(
     verify_user_service: UserService,
-    fake_instance: Faker,
     fake_user_schema: UserCreate,
+    fake_instance: Faker,
     fake_hasher: PasswordHasher,
     db_session: AsyncSession,
 ) -> None:
-    """Test change user status."""
+    """Test updating the user profile."""
     new_user = User(
         email=fake_user_schema.email,
         plain_password=fake_user_schema.password,
@@ -154,20 +153,22 @@ async def test_update_user_profile(
     db_session.add(new_user)
     await db_session.commit()
 
-    new_profile = ProfileUpdate(
+    assert isinstance(new_user, User)
+    assert new_user.id is not None
+
+    updated_data = ProfileUpdate(
         first_name=fake_instance.first_name(),
-        last_name=fake_instance.last_name(),
-        bio=fake_instance.name(),
-    )
-    updated_user_schema = await verify_user_service.update_user_profile(
-        user_id=new_user.id,
-        profile_data=new_profile,
+        bio=fake_instance.text(max_nb_chars=255),
     )
 
-    assert isinstance(updated_user_schema, UserRead)
-    assert isinstance(updated_user_schema.profile, ProfileRead)
-    assert updated_user_schema.profile.id == new_user.profile.id
-    assert updated_user_schema.profile.user_id == new_user.id
-    assert updated_user_schema.profile.first_name == new_profile.first_name
-    assert updated_user_schema.profile.last_name == new_profile.last_name
-    assert updated_user_schema.profile.bio == new_profile.bio
+    user_detail = await verify_user_service.update_profile(
+        user_id=new_user.id,
+        data=updated_data,
+    )
+
+    assert isinstance(user_detail, User)
+    assert user_detail.id == new_user.id
+    assert isinstance(user_detail.profile, Profile)
+    assert user_detail.profile.first_name == updated_data.first_name
+    assert user_detail.profile.bio == updated_data.bio
+    assert user_detail.profile.last_name is None

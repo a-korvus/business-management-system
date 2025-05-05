@@ -11,12 +11,11 @@ from project.app_auth.application.interfaces import (
 )
 from project.app_auth.application.schemas import (
     LoginSchema,
-    ProfileRead,
     Token,
     UserCreate,
     UserRead,
 )
-from project.app_auth.application.services import AuthService
+from project.app_auth.application.services.auth import AuthService
 from project.app_auth.domain.models import Profile, User
 
 
@@ -43,7 +42,6 @@ async def test_register_user(
     assert new_user_schema.email == fake_user_schema.email
     assert new_user_schema.id is not None
     assert new_user_schema.is_active is True
-    assert isinstance(new_user_schema.profile, ProfileRead)
 
     # проверяем данные в фейковом репозитории через UoW
     async with uow_factory() as uow:  # через UoW получаем доступ к репозиторию
