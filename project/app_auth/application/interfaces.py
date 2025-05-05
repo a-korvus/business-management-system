@@ -35,6 +35,16 @@ class AbstractUserRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def get_by_id_profile(self, user_id: uuid.UUID) -> User | None:
+        """Get the user by ID with profile."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_by_id_detail(self, user_id: uuid.UUID) -> "User" | None:
+        """Get User by its ID with all relationships."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def get_by_email(self, email: str) -> "User" | None:
         """Get User by its email."""
         raise NotImplementedError
@@ -48,6 +58,10 @@ class AbstractUserRepository(abc.ABC):
     async def add(self, user: "User") -> None:
         """Add User object to session."""
         raise NotImplementedError
+
+    @abc.abstractmethod
+    async def check_command_exists(self, command_id: uuid.UUID) -> bool:
+        """Check that the command exists."""
 
 
 class AbstractUnitOfWork(abc.ABC):

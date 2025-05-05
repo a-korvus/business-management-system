@@ -12,7 +12,8 @@ from project.app_auth.application.interfaces import (
 )
 from project.app_auth.application.schemas import TokenData
 from project.app_auth.application.security import decode_access_token
-from project.app_auth.application.services import AuthService, UserService
+from project.app_auth.application.services.auth import AuthService
+from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
@@ -86,7 +87,7 @@ async def get_current_user(
     """
     try:
         user_id = uuid.UUID(token_data.uid)
-        user: User | None = await user_service.get_user_by_id(user_id)
+        user: User | None = await user_service.get_by_id_detail(user_id)
 
         if user is None:
             raise CredentialException(

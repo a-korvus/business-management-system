@@ -11,13 +11,14 @@ from project.app_auth.application.schemas import (
     UserCreate,
     UserRead,
 )
-from project.app_auth.application.services import AuthService
+from project.app_auth.application.services.auth import AuthService
 from project.app_auth.domain.exceptions import (
     AuthenticationError,
     EmailAlreadyExists,
     InvalidPasswordFormatError,
 )
 from project.app_auth.presentation.dependencies import get_auth_service
+from project.app_org.domain.exceptions import CommandNotFound
 from project.config import settings
 from project.core.log_config import get_logger
 
@@ -57,6 +58,11 @@ async def register(
     try:
         return await auth_service.register_user(user_data=user_in)
     except EmailAlreadyExists as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except CommandNotFound as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

@@ -7,16 +7,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from project.app_org.application.schemas import RoleRead
+from project.app_org.application.schemas import CommandRead, RoleRead
 
 
-class TunedModel(BaseModel):
-    """Pre-configured pydantic base model."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class UserBase(TunedModel):
+class UserBase(BaseModel):
     """Pre-configured user base model."""
 
     email: EmailStr
@@ -26,36 +20,48 @@ class UserCreate(UserBase):
     """Schema to validate the entered new user data."""
 
     password: str = Field(..., min_length=8)
+    command_id: uuid.UUID | None = None
     role_id: uuid.UUID | None = None
-    profile: ProfileCreate | None = None
 
 
 class UserRead(UserBase):
-    """Schema to serialize the existing user data."""
+    """Schema to serialize the User instace."""
 
     id: uuid.UUID
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    profile: ProfileRead | None
+
+    command_id: uuid.UUID | None
+    role_id: uuid.UUID | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserDetail(UserBase):
+    """Schema to serialize the User instace with all related data."""
+
+    id: uuid.UUID
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    command_id: uuid.UUID | None
+    role_id: uuid.UUID | None
+
+    profile: ProfileRead
+    command: CommandRead | None
     role: RoleRead | None
 
-
-# class UserUpdate(TunedModel):
-#     """Schema to validate the entered existing user data to update it."""
-
-#     email: EmailStr | None = None
-#     password: str | None = Field(None, max_length=8)
-#     is_active: bool | None = None
-#     profile: ProfileUpdate | None = None
+    model_config = ConfigDict(from_attributes=True)
 
 
-class ProfileBase(TunedModel):
+class ProfileBase(BaseModel):
     """Pre-configured Profile base model."""
 
-    first_name: str | None = Field(None, max_length=50)
-    last_name: str | None = Field(None, max_length=50)
-    bio: str | None = Field(None, max_length=255)
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name: str | None = Field(default=None, max_length=50)
+    bio: str | None = Field(default=None, max_length=255)
 
 
 class ProfileCreate(ProfileBase):
@@ -75,6 +81,8 @@ class ProfileRead(ProfileBase):
 
     id: uuid.UUID
     user_id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginSchema(BaseModel):

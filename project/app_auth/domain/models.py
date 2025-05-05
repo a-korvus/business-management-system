@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from project.app_org.domain.models import Role
+from project.app_org.domain.models import Command, Role
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
@@ -52,6 +52,14 @@ class User(Base):
         onupdate=func.now(),
     )
 
+    command_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey(
+            "commands.id", ondelete="RESTRICT", name="fk_users_command_id"
+        ),
+        nullable=True,
+        index=True,
+        default=None,
+    )
     role_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("roles.id", ondelete="RESTRICT", name="fk_users_role_id"),
         nullable=True,
@@ -68,11 +76,15 @@ class User(Base):
     )
     role: Mapped[Role] = relationship(
         back_populates="users",
+        cascade="save-update, merge",
+    )
+    command: Mapped[Command] = relationship(
+        back_populates="users",
+        cascade="save-update, merge",
     )
 
     def __init__(
         self,
-        email: str,
         plain_password: str,
         hasher: "PasswordHasher",
         **kwargs: Any,
@@ -85,10 +97,6 @@ class User(Base):
         """
         super().__init__(**kwargs)
 
-        if not email:
-            raise ValueError("Email cannot be empty.")
-
-        self.email = email
         self.set_password(plain_password, hasher)
 
         if not hasattr(self, "profile") or self.profile is None:

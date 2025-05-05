@@ -1,14 +1,21 @@
 """Users router in the 'app_auth'."""
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from project.app_auth.application.schemas import UserRead
-from project.app_auth.application.services import UserService
+from project.app_auth.application.schemas import (
+    ProfileUpdate,
+    TokenData,
+    UserDetail,
+    UserRead,
+)
+from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import User
 from project.app_auth.presentation.dependencies import (
     get_current_user,
+    get_current_user_data,
     get_user_service,
 )
 from project.config import settings
@@ -24,24 +31,40 @@ router = APIRouter(
 
 @router.get(
     path="/me/",
-    response_model=UserRead,
+    response_model=UserDetail,
     name="identity",
     summary="Get current user.",
     description="Return the details of the currently authenticated user.",
 )
-async def read_users_me(
+async def get_personal_data(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
-    """Return data of the current user.
+    """Return data of the current user. Protected endpoint.
 
     Args:
         current_user (Annotated[UserRead, Depends): Dependency to get
             current user. Requires a valid token in headers.
 
     Returns:
-        User: User object.
+        User: Full User object.
     """
     return current_user
+
+
+@router.put(
+    path="/me/update-profile/",
+    response_model=UserDetail,
+    summary="Update current user.",
+    description="Return the details of the currently authenticated user.",
+)
+async def update_personal_data(
+    update_data: ProfileUpdate,
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> User:
+    """Update user profile. Protected endpoint."""
+    user_id = uuid.UUID(token_data.uid)
+    return await user_service.update_profile(user_id, update_data)
 
 
 @router.get("/list/", response_model=list[UserRead])

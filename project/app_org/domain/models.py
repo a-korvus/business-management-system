@@ -55,6 +55,11 @@ class Command(Base):
         onupdate=func.now(),
     )
 
+    users: Mapped[list[Department]] = relationship(
+        "User",
+        back_populates="command",
+        cascade="save-update, merge",
+    )
     departments: Mapped[list[Department]] = relationship(
         "Department",
         back_populates="command",

@@ -8,7 +8,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from project.app_auth.application.interfaces import PasswordHasher
-from project.app_auth.application.services import UserService
+from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import User
 from project.app_auth.presentation.dependencies import (
     get_password_hasher,
