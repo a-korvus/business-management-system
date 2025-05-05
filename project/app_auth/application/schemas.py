@@ -5,9 +5,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from project.app_org.application.schemas import RoleRead
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from project.app_org.application.schemas import RoleRead
 
 
 class TunedModel(BaseModel):

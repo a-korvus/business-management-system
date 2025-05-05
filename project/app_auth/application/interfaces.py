@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import uuid
 from types import TracebackType
-from typing import Protocol, Self, runtime_checkable, Sequence, TypeVar
+from typing import Protocol, Self, Sequence, TypeVar, runtime_checkable
 
 from project.app_auth.domain.models import User
 from project.core.db.base import Base
