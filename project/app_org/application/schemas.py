@@ -41,7 +41,6 @@ class CommandRead(CommandBase):
     name: str
     created_at: datetime
     updated_at: datetime
-    departments: list[DepartmentRead] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,8 +71,7 @@ class DepartmentRead(DepartmentBase):
     name: str
     created_at: datetime
     updated_at: datetime
-    command: CommandRead | None
-    roles: list[RoleRead] | None
+    command_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -128,7 +126,7 @@ class RoleRead(RoleBase):
     name: RoleType
     created_at: datetime
     updated_at: datetime
-    department: DepartmentRead | None
+    department_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
 

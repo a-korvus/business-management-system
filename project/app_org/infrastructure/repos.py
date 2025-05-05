@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import raiseload, selectinload
 
 from project.app_org.application.interfaces import (
     AbsCommandRepository,
@@ -56,7 +56,9 @@ class SACommandRepo(AbsCommandRepository):
 
     async def list_all(self) -> list[Command]:
         """Get all commands."""
-        result = await self._session.execute(select(Command))
+        result = await self._session.execute(
+            select(Command).options(raiseload(Command.departments))
+        )
         return list(result.scalars().all())
 
     async def add(self, command: Command) -> None:
@@ -98,7 +100,11 @@ class SADepartmentRepo(AbsDepartmentRepository):
 
     async def list_all(self) -> list[Department]:
         """Get all departments."""
-        result = await self._session.execute(select(Department))
+        result = await self._session.execute(
+            select(Department).options(
+                raiseload(Department.command), raiseload(Department.roles)
+            )
+        )
         return list(result.scalars().all())
 
     async def add(self, department: Department) -> None:
@@ -119,7 +125,9 @@ class SARoleRepo(AbsRoleRepository):
     async def get_by_id(self, role_id: uuid.UUID) -> Role | None:
         """Get the role by ID."""
         result = await self._session.execute(
-            select(Role).where(Role.id == role_id)
+            select(Role)
+            .options(raiseload(Role.department), raiseload(Role.users))
+            .where(Role.id == role_id)
         )
         return result.scalar_one_or_none()
 
@@ -137,7 +145,11 @@ class SARoleRepo(AbsRoleRepository):
 
     async def list_all(self) -> list[Role]:
         """Get all role."""
-        result = await self._session.execute(select(Role))
+        result = await self._session.execute(
+            select(Role).options(
+                raiseload(Role.department), raiseload(Role.users)
+            )
+        )
         return list(result.scalars().all())
 
     async def add(self, role: Role) -> None:

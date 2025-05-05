@@ -50,10 +50,13 @@ class RoleService:
                 if not await uow.departments.get_by_id(data.department_id):
                     raise DepartmentNotFound(department_id=data.department_id)
 
-            new_role = Role(**data.model_dump())
+            new_role = Role(**data.model_dump(exclude_unset=True))
             await uow.roles.add(new_role)
             await uow.commit()
-            await uow.refresh(new_role, attribute_names=["users"])
+            await uow.refresh(
+                new_role,
+                attribute_names=["department", "users"],
+            )
             logger.debug(
                 "Role instance '%s' refreshed after creating.",
                 new_role.id,

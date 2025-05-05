@@ -121,8 +121,8 @@ async def update_post(
             detail=str(e),
         )
     except Exception:  # noqa
-        logger.exception("Unexpected error while retrieving the post.")
+        logger.exception("Unexpected error while updating the post.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected error occurred while retrieving the post.",
+            detail="Unexpected error occurred while updating the post.",
         )
