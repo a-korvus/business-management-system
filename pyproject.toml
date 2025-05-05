@@ -40,7 +40,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=79", "wheel"]
+requires = ["setuptools>=79"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
