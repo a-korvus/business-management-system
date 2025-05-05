@@ -41,12 +41,6 @@ def fake_hasher() -> FakePasswordHasher:
 
 
 @pytest.fixture(scope="function")
-def fake_instance() -> Faker:
-    """Get Faker instance."""
-    return Faker()
-
-
-@pytest.fixture(scope="function")
 def fake_user_schema(fake_instance: Faker) -> UserCreate:
     """Define the fake user for tests."""
     return UserCreate(

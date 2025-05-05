@@ -16,7 +16,6 @@ logger = get_logger(__name__)
 
 AUTH_PREFIX = settings.AUTH.PREFIX_AUTH
 
-# пометить все тесты в модуле как асинхронные
 pytestmark = pytest.mark.anyio
 
 

@@ -4,6 +4,7 @@ import asyncio
 from typing import AsyncGenerator
 
 import pytest
+from faker import Faker
 from httpx import ASGITransport, AsyncClient
 from pytest import FixtureRequest
 from sqlalchemy import text
@@ -25,7 +26,7 @@ from project.config import settings
 from project.core.db.base import Base
 from project.core.log_config import get_logger
 from project.main import app
-from tests.utils.setup_db import (
+from tests.setup_teardown_db import (
     setup_db_before_tests,
     teardown_db_after_tests,
 )
@@ -107,6 +108,12 @@ async def db_engine(
             )
         pytest.fail(f"Failed to configure test environment: {e}")
         raise  # исходная ошибка настройки, чтобы тесты не запустились
+
+
+@pytest.fixture(scope="function")
+def fake_instance() -> Faker:
+    """Get Faker instance."""
+    return Faker()
 
 
 @pytest.fixture(scope="function")

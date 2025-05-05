@@ -20,9 +20,10 @@ from project.app_auth.application.schemas import (
 from project.app_auth.application.services import AuthService, UserService
 from project.app_auth.domain.models import User
 
+pytestmark = pytest.mark.anyio
+
 
 @pytest.mark.usefixtures("truncate_tables")
-@pytest.mark.anyio
 async def test_get_user_by_id(
     verify_auth_service: AuthService,
     verify_user_service: UserService,
@@ -42,7 +43,6 @@ async def test_get_user_by_id(
 
 
 @pytest.mark.usefixtures("truncate_tables")
-@pytest.mark.anyio
 async def test_get_user_by_email(
     verify_user_service: UserService,
     fake_user_schema: UserCreate,
@@ -67,7 +67,6 @@ async def test_get_user_by_email(
 
 
 @pytest.mark.usefixtures("truncate_tables")
-@pytest.mark.anyio
 async def test_get_all_users(
     verify_user_service: UserService,
     fake_user_schema: UserCreate,
@@ -99,7 +98,6 @@ async def test_get_all_users(
 
 
 @pytest.mark.usefixtures("truncate_tables")
-@pytest.mark.anyio
 async def test_deactivate_activate_user(
     verify_user_service: UserService,
     uow_factory: Callable[[], AbstractUnitOfWork],
@@ -140,7 +138,6 @@ async def test_deactivate_activate_user(
 
 
 @pytest.mark.usefixtures("truncate_tables")
-@pytest.mark.anyio
 async def test_update_user_profile(
     verify_user_service: UserService,
     fake_instance: Faker,
