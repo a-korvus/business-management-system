@@ -24,7 +24,7 @@ class SAUserRepository(AbstractUserRepository):
         """Get the user by ID. Load related profile."""
         stmt = (
             select(User)
-            .options(selectinload(User.profile))
+            .options(selectinload(User.profile), selectinload(User.role))
             .where(User.id == user_id)
         )
         result = await self._session.execute(stmt)
@@ -34,7 +34,7 @@ class SAUserRepository(AbstractUserRepository):
         """Get the user by email. Load related profile."""
         stmt = (
             select(User)
-            .options(selectinload(User.profile))
+            .options(selectinload(User.profile), selectinload(User.role))
             .where(User.email == email)
         )
         result = await self._session.execute(stmt)

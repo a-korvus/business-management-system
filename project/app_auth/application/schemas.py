@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+from project.app_org.application.schemas import RoleRead
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -24,6 +26,7 @@ class UserCreate(UserBase):
     """Schema to validate the entered new user data."""
 
     password: str = Field(..., min_length=8)
+    role_id: uuid.UUID | None = None
     profile: ProfileCreate | None = None
 
 
@@ -35,6 +38,7 @@ class UserRead(UserBase):
     created_at: datetime
     updated_at: datetime
     profile: ProfileRead | None
+    role: RoleRead | None
 
 
 # class UserUpdate(TunedModel):

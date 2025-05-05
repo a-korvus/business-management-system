@@ -70,7 +70,14 @@ class AuthService:
             # добавляем объект в сессию через репозиторий
             await self.uow.users.add(new_user)
             await self.uow.commit()  # коммит транзакции через uow
-
+            await self.uow.refresh(
+                new_user,
+                attribute_names=["profile", "role"],
+            )
+            logger.debug(
+                "User instance '%s' refreshed after creating.",
+                new_user.id,
+            )
             # возвращаем pydantic схему обновленного объекта
             return UserRead.model_validate(new_user)
 

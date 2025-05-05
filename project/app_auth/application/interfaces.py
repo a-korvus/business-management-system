@@ -5,9 +5,12 @@ from __future__ import annotations
 import abc
 import uuid
 from types import TracebackType
-from typing import Protocol, Self, runtime_checkable
+from typing import Protocol, Self, runtime_checkable, Sequence, TypeVar
 
 from project.app_auth.domain.models import User
+from project.core.db.base import Base
+
+ModelType = TypeVar("ModelType", bound=Base)
 
 
 @runtime_checkable
@@ -68,6 +71,15 @@ class AbstractUnitOfWork(abc.ABC):
     @abc.abstractmethod
     async def commit(self) -> None:
         """Commit changes within a session."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def refresh(
+        self,
+        instance: ModelType,
+        attribute_names: Sequence[str] | None = None,
+    ) -> None:
+        """Refresh the given instance from the database."""
         raise NotImplementedError
 
     @abc.abstractmethod

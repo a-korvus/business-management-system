@@ -1,11 +1,14 @@
 """Unit of work actions in the 'app_auth' app."""
 
 import types
-from typing import Self
+from typing import Self, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from project.app_auth.application.interfaces import AbstractUnitOfWork
+from project.app_auth.application.interfaces import (
+    AbstractUnitOfWork,
+    ModelType,
+)
 from project.app_auth.infrastructure.repositories import SAUserRepository
 
 
@@ -65,6 +68,24 @@ class SAUnitOfWork(AbstractUnitOfWork):
         except Exception:  # noqa
             await self.rollback()  # откат при ЛЮБОЙ ошибке коммита
             raise  # проброс исключения выше
+
+    async def refresh(
+        self,
+        instance: ModelType,
+        attribute_names: Sequence[str] | None = None,
+    ) -> None:
+        """Refresh the given instance from the database."""
+        if not self._session:
+            raise RuntimeError("Session is not active for refresh.")
+
+        try:
+            await self._session.refresh(
+                instance,
+                attribute_names=attribute_names,
+            )
+        except Exception:  # noqa
+            await self.rollback()
+            raise
 
     async def rollback(self) -> None:
         """Rollback the current transaction."""
