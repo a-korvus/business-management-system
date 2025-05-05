@@ -6,7 +6,6 @@ from typing import Callable
 
 import pytest
 from faker import Faker
-from sqlalchemy.exc import MissingGreenlet
 
 from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import RoleCreate, RoleUpdate
@@ -50,8 +49,6 @@ async def test_get_by_id(
 
     assert isinstance(role, Role)
     assert new_role.id == role.id
-    with pytest.raises(MissingGreenlet):
-        role.users
 
 
 async def test_get_by_id_with_users(

@@ -1,11 +1,13 @@
 """Pytest configuration settings for 'app_auth' tests."""
 
+import random
 from typing import Callable
 
 import pytest
 from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from project.app_org.application.enums import RoleType
 from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import (
     CommandCreate,
@@ -118,6 +120,33 @@ def fake_news_schema(fake_instance: Faker) -> NewsCreate:
     return NewsCreate(
         text=fake_instance.text(max_nb_chars=5000),
     )
+
+
+@pytest.fixture(scope="function")
+def fake_command_data(fake_instance: Faker) -> dict:
+    """Define the data of some Command for tests."""
+    return {
+        "name": fake_instance.unique.company(),
+        "description": fake_instance.text(max_nb_chars=500),
+    }
+
+
+@pytest.fixture(scope="function")
+def fake_department_data(fake_instance: Faker) -> dict:
+    """Define the data of some Department for tests."""
+    return {
+        "name": fake_instance.company(),
+        "description": fake_instance.text(max_nb_chars=500),
+    }
+
+
+@pytest.fixture(scope="function")
+def fake_role_data(fake_instance: Faker) -> dict:
+    """Define the data of some Role for tests."""
+    return {
+        "name": random.choice(RoleType.get_values()),
+        "description": fake_instance.text(max_nb_chars=500),
+    }
 
 
 @pytest.fixture(scope="function")
