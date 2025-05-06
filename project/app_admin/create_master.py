@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import inspect, select
 
 from project.app_auth.domain.models import User
-from project.app_auth.presentation.dependencies import get_password_hasher
+from project.app_auth.infrastructure.security import get_password_hasher
 from project.config import settings
 from project.core.db.setup import AsyncSessionFactory
 from project.core.log_config import get_logger
