@@ -12,6 +12,7 @@ from project.app_auth.application.interfaces import (
     PasswordHasher,
 )
 from project.app_auth.application.schemas import (
+    LoginSchema,
     ProfileUpdate,
     UserCreate,
     UserRead,
@@ -19,6 +20,7 @@ from project.app_auth.application.schemas import (
 from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import Profile, User
+from project.app_auth.infrastructure.security import get_password_hasher
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
@@ -172,3 +174,38 @@ async def test_update_profile(
     assert user_detail.profile.first_name == updated_data.first_name
     assert user_detail.profile.bio == updated_data.bio
     assert user_detail.profile.last_name is None
+
+
+async def test_restore_user(
+    verify_user_service: UserService,
+    fake_user_schema: UserCreate,
+    db_session: AsyncSession,
+) -> None:
+    """Test restoring deactivated user. Using a real password hasher."""
+    new_user = User(
+        email=fake_user_schema.email,
+        plain_password=fake_user_schema.password,
+        hasher=get_password_hasher(),
+    )
+    db_session.add(new_user)
+    await db_session.commit()
+
+    assert isinstance(new_user, User)
+    assert new_user.id is not None
+    assert new_user.is_active
+
+    new_user.deactivate()
+
+    await db_session.commit()
+
+    assert not new_user.is_active
+
+    credentials = LoginSchema(
+        username=fake_user_schema.email,
+        password=fake_user_schema.password,
+    )
+    restored_user = await verify_user_service.restore_user(credentials)
+
+    assert isinstance(restored_user, User)
+    assert restored_user.id == new_user.id
+    assert restored_user.is_active

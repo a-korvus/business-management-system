@@ -5,9 +5,9 @@ from faker import Faker
 from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.infrastructure.security import (
     CryptographyPasswordHasher,
+    get_password_hasher,
     password_hasher,
 )
-from project.app_auth.presentation.dependencies import get_password_hasher
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)

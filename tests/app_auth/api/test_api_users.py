@@ -1,14 +1,17 @@
 """Test API routs for 'users' router."""
 
+from json.decoder import JSONDecodeError
 from typing import Any
 
 import pytest
 from faker import Faker
 from httpx import AsyncClient, Response
 
+from project.app_auth.application.schemas import UserCreate
 from project.config import settings
 
 USERS_PREFIX = settings.AUTH.PREFIX_USERS
+AUTH_PREFIX = settings.AUTH.PREFIX_AUTH
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
@@ -73,6 +76,76 @@ async def test_update_personal_data(
     assert profile.get("first_name") == upd_profile_data["first_name"]
     assert profile.get("bio") == upd_profile_data["bio"]
     assert profile.get("last_name") is None
+
+
+async def test_deactivate_user(
+    httpx_test_client: AsyncClient,
+    authenticated_user: dict[str, Any],
+) -> None:
+    """Test deactivating user. Protected."""
+    token = authenticated_user["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response: Response = await httpx_test_client.delete(
+        url=f"{USERS_PREFIX}/me/",
+        headers=headers,
+    )
+
+    assert response.status_code == 204
+    with pytest.raises(JSONDecodeError):
+        response.json()
+
+
+async def test_restore_user(
+    httpx_test_client: AsyncClient,
+    fake_user_schema: UserCreate,
+) -> None:
+    """Test restoring deactivated user."""
+    # создать пользователя
+    create_response: Response = await httpx_test_client.post(
+        url=f"{AUTH_PREFIX}/register/",
+        json=fake_user_schema.model_dump(),
+    )
+    assert create_response.status_code == 201
+    new_user_data: dict = create_response.json()
+    assert new_user_data.get("id") is not None
+
+    # получить токен
+    auth_response = await httpx_test_client.post(
+        url=f"{AUTH_PREFIX}/login/",
+        data={
+            "username": fake_user_schema.email,
+            "password": fake_user_schema.password,
+        },
+    )
+    assert auth_response.status_code == 200
+    token: str = auth_response.json()["access_token"]
+
+    # деактивировать пользователя
+    deactivate_response: Response = await httpx_test_client.delete(
+        url=f"{USERS_PREFIX}/me/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert deactivate_response.status_code == 204
+
+    # восстановить пользователя (активировать)
+    credentials = {
+        "username": fake_user_schema.email,
+        "password": fake_user_schema.password,
+    }
+    restore_response: Response = await httpx_test_client.post(
+        url=f"{USERS_PREFIX}/restore/",
+        json=credentials,
+    )
+
+    assert restore_response.status_code == 200
+
+    restore_data = restore_response.json()
+    assert isinstance(restore_data, dict)
+    assert restore_data.get("id") == new_user_data.get("id")
+    assert isinstance(restore_data.get("profile"), dict)
+    assert not restore_data.get("command")
+    assert not restore_data.get("role")
 
 
 async def test_read_users_me_no_token(httpx_test_client: AsyncClient) -> None:
