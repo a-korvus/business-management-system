@@ -8,7 +8,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import PostgresDsn
+from pydantic import PostgresDsn, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR: Path = Path(__file__).resolve().parent.parent
@@ -57,6 +57,53 @@ class PGConfig(BaseSettings):
         )
 
 
+class RedisConfig(BaseSettings):
+    """Redis config."""
+
+    USER: str = "admin_user"
+    USER_PASSWORD: str = "admin_user_password"
+    HOST: str = "localhost"
+    PORT: int = 6379
+    DSN: RedisDsn | None = None
+
+    CACHE_DB: int = 0
+    CELERY_BROKER_DB: int = 1
+    CELERY_BACKEND_DB: int = 2
+
+    model_config = SettingsConfigDict(env_prefix="REDIS_", extra="allow")
+
+    def _create_url(self, db_num: int) -> str:
+        """Create a link to redis connection.
+
+        Args:
+            host (str): Host to connection.
+            db_num (int): Indicate the database number.
+
+        Returns:
+            str: URL to connection.
+        """
+        # redis://username:password@localhost:6379/0
+        return (
+            f"redis://{self.USER}:{self.USER_PASSWORD}@"
+            f"{self.HOST}:{self.PORT}/{db_num}"
+        )
+
+    @property
+    def url_cache(self) -> str:
+        """Config a link to caching redis connection."""
+        return self._create_url(db_num=self.CACHE_DB)
+
+    @property
+    def url_celery_broker(self) -> str:
+        """Config a link to celery broker redis connection."""
+        return self._create_url(db_num=self.CELERY_BROKER_DB)
+
+    @property
+    def url_celery_backend(self) -> str:
+        """Config a link to celery backend redis connection."""
+        return self._create_url(db_num=self.CELERY_BACKEND_DB)
+
+
 class AuthConfig(BaseSettings):
     """Configuration specific to the 'app auth' application."""
 
@@ -98,6 +145,7 @@ class ProjectSettings(BaseSettings):
 
     # вложенные конфиги
     DB: PGConfig = PGConfig()
+    REDIS: RedisConfig = RedisConfig()
     AUTH: AuthConfig = AuthConfig()
 
     model_config = SettingsConfigDict(env_prefix="PROJECT_", extra="allow")
