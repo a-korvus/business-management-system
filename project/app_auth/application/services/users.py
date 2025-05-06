@@ -2,10 +2,21 @@
 
 import uuid
 
-from project.app_auth.application.interfaces import AbstractUnitOfWork
-from project.app_auth.application.schemas import ProfileUpdate, UserRead
-from project.app_auth.domain.exceptions import UserNotFound
+from project.app_auth.application.interfaces import (
+    AbstractUnitOfWork,
+    PasswordHasher,
+)
+from project.app_auth.application.schemas import (
+    LoginSchema,
+    ProfileUpdate,
+    UserRead,
+)
+from project.app_auth.domain.exceptions import (
+    AuthenticationError,
+    UserNotFound,
+)
 from project.app_auth.domain.models import User
+from project.app_auth.infrastructure.security import get_password_hasher
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -55,7 +66,7 @@ class UserService:
             user_id (uuid.UUID): User ID in DB.
 
         Returns:
-            UserRead | None: User data as pydantic schema.
+            User | None: User instance if it exists.
         """
         async with self.uow:
             return await self.uow.users.get_by_id(user_id)
@@ -72,7 +83,7 @@ class UserService:
             email (str): User email in DB.
 
         Returns:
-            UserRead | None: User data as pydantic schema.
+        User | None: User instance if it exists.
         """
         async with self.uow:
             return await self.uow.users.get_by_email(email)
@@ -152,4 +163,40 @@ class UserService:
                 await self.uow.commit()
                 await self.uow.refresh(user, attribute_names=["profile"])
 
+            return user
+
+    async def restore_user(self, credentials: LoginSchema) -> User:
+        """Restore deactivated user.
+
+        Args:
+            credentials (LoginSchema): User credentials as pydantic schema.
+
+        Returns:
+            User: User instance with loaded relationships.
+        """
+        async with self.uow as uow:
+            user: User | None = await uow.users.get_by_email_detail(
+                email=credentials.username,
+            )
+            if not user:
+                # email не найден в БД
+                raise UserNotFound(email=credentials.username)
+
+            psw_hasher: PasswordHasher = get_password_hasher()
+            check_password: bool = psw_hasher.verify_password(
+                plain_pswrd=credentials.password,
+                stored_pswrd=user.hashed_password,
+            )
+            if not check_password:
+                # введен неверный пароль
+                raise AuthenticationError()
+
+            if user.is_active:
+                # пользователь уже активен
+                return user
+
+            # активация пользователя, сохранение изменений
+            user.activate()
+            await uow.commit()
+            await uow.refresh(user)
             return user

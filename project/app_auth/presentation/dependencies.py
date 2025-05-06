@@ -15,7 +15,7 @@ from project.app_auth.application.security import decode_access_token
 from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import User
-from project.app_auth.infrastructure.security import password_hasher
+from project.app_auth.infrastructure.security import get_password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
 from project.config import settings
@@ -33,11 +33,6 @@ def get_uow() -> AbstractUnitOfWork:
     """Get Unit of Work instance."""
     # фабрику сессий получаем в конструкторе класса по умолчанию
     return SAUnitOfWork(session_factory=AsyncSessionFactory)
-
-
-def get_password_hasher() -> PasswordHasher:
-    """Get the only one password hasher instance."""
-    return password_hasher  # синглтон
 
 
 def get_auth_service(

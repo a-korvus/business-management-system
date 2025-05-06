@@ -5,6 +5,7 @@ Using 'Argon2id' from the 'cryptography' library.
 
 import base64
 import os
+from functools import lru_cache
 
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
@@ -121,3 +122,9 @@ class CryptographyPasswordHasher(PasswordHasher):
 
 
 password_hasher = CryptographyPasswordHasher()
+
+
+@lru_cache(maxsize=1)
+def get_password_hasher() -> PasswordHasher:
+    """Get the only one password hasher instance."""
+    return password_hasher  # синглтон

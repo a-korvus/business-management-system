@@ -57,6 +57,20 @@ class SAUserRepository(AbstractUserRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_email_detail(self, email: str) -> User | None:
+        """Get the user by email. Load related objects."""
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.profile),
+                selectinload(User.command),
+                selectinload(User.role),
+            )
+            .where(User.email == email)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def list_all(self) -> list[User]:
         """Get all users."""
         result = await self._session.execute(select(User))
