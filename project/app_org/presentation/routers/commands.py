@@ -5,13 +5,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from project.app_auth.domain.models import User
+from project.app_auth.presentation.dependencies import get_admin
 from project.app_org.application.schemas import (
     CommandCreate,
     CommandRead,
     CommandUpdate,
 )
 from project.app_org.application.services.command import CommandService
-from project.app_org.domain.exceptions import CommandNotFound
+from project.app_org.domain.exceptions import (
+    CommandNameExistsError,
+    CommandNotEmpty,
+    CommandNotFound,
+)
 from project.app_org.domain.models import Command
 from project.app_org.presentation.dependencies import get_command_service
 from project.config import settings
@@ -35,11 +41,17 @@ router = APIRouter(
 async def create_command(
     data: CommandCreate,
     command_service: Annotated[CommandService, Depends(get_command_service)],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> Command:
-    """Create a new Command."""
+    """Create a new Command. Protected. For admins only."""
     try:
         return await command_service.create(data)
-    except ValueError as e:  # ошибки валидации из домена
+    except CommandNameExistsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -106,8 +118,9 @@ async def update_command(
     command_id: uuid.UUID,
     updating_data: CommandUpdate,
     command_service: Annotated[CommandService, Depends(get_command_service)],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> Command:
-    """Update the Command by ID."""
+    """Update the Command by ID. Protected. For admins only."""
     try:
         return await command_service.update(
             command_id=command_id,
@@ -128,4 +141,61 @@ async def update_command(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error occurred while updating the command.",
+        )
+
+
+@router.delete(
+    path="/{command_id}/",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Deactivate command.",
+)
+async def deactivate_command(
+    command_id: uuid.UUID,
+    command_service: Annotated[CommandService, Depends(get_command_service)],
+    admin: Annotated[User, Depends(get_admin)],
+) -> None:
+    """Deactivate the Command by ID. Protected. For admins only."""
+    try:
+        await command_service.deactivate(command_id=command_id)
+    except CommandNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except CommandNotEmpty as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+    except Exception:  # noqa
+        logger.exception("Unexpected error while deactivating the command.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error occurred while deactivating the command.",
+        )
+
+
+@router.post(
+    path="/{command_id}/activate/",
+    status_code=status.HTTP_200_OK,
+    summary="Activate command.",
+)
+async def activate_command(
+    command_id: uuid.UUID,
+    command_service: Annotated[CommandService, Depends(get_command_service)],
+    admin: Annotated[User, Depends(get_admin)],
+) -> None:
+    """Activate the Command by ID. Protected. For admins only."""
+    try:
+        await command_service.activate(command_id)
+    except CommandNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception:  # noqa
+        logger.exception("Unexpected error while activating the command.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error occurred while activating the command.",
         )

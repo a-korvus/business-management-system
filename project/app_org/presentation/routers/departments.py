@@ -5,13 +5,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from project.app_auth.domain.models import User
+from project.app_auth.presentation.dependencies import get_admin
 from project.app_org.application.schemas import (
     DepartmentCreate,
     DepartmentRead,
     DepartmentUpdate,
 )
 from project.app_org.application.services.department import DepartmentService
-from project.app_org.domain.exceptions import DepartmentNotFound
+from project.app_org.domain.exceptions import (
+    DepartmentNotEmpty,
+    DepartmentNotFound,
+)
 from project.app_org.domain.models import Department
 from project.app_org.presentation.dependencies import get_department_service
 from project.config import settings
@@ -37,11 +42,12 @@ async def create_department(
     department_service: Annotated[
         DepartmentService, Depends(get_department_service)
     ],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> Department:
-    """Create a new Department."""
+    """Create a new Department. Protected. For admins only."""
     try:
         return await department_service.create(data)
-    except ValueError as e:  # ошибки валидации из домена
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -116,8 +122,9 @@ async def update_department(
     department_service: Annotated[
         DepartmentService, Depends(get_department_service)
     ],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> Department:
-    """Update the Department by ID."""
+    """Update the Department by ID. Protected. For admins only."""
     try:
         return await department_service.update(
             department_id=department_id,
@@ -138,4 +145,65 @@ async def update_department(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error occurred while updating the department.",
+        )
+
+
+@router.delete(
+    path="/{department_id}/",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Deactivate department.",
+)
+async def deactivate_department(
+    department_id: uuid.UUID,
+    department_service: Annotated[
+        DepartmentService, Depends(get_department_service)
+    ],
+    admin: Annotated[User, Depends(get_admin)],
+) -> None:
+    """Deactivate the Department by ID. Protected. For admins only."""
+    try:
+        await department_service.deactivate(department_id=department_id)
+    except DepartmentNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except DepartmentNotEmpty as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+    except Exception:  # noqa
+        logger.exception("Unexpected error while deactivating the department.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error while deactivating the department.",
+        )
+
+
+@router.post(
+    path="/{department_id}/activate/",
+    status_code=status.HTTP_200_OK,
+    summary="Activate department.",
+)
+async def activate_department(
+    department_id: uuid.UUID,
+    department_service: Annotated[
+        DepartmentService, Depends(get_department_service)
+    ],
+    admin: Annotated[User, Depends(get_admin)],
+) -> None:
+    """Activate the Department by ID. Protected. For admins only."""
+    try:
+        await department_service.activate(department_id)
+    except DepartmentNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception:  # noqa
+        logger.exception("Unexpected error while activating the department.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error while activating the department.",
         )

@@ -4,8 +4,13 @@ import uuid
 
 from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import RoleCreate, RoleUpdate
-from project.app_org.domain.exceptions import DepartmentNotFound, RoleNotFound
+from project.app_org.domain.exceptions import (
+    DepartmentNotFound,
+    RoleNotEmpty,
+    RoleNotFound,
+)
 from project.app_org.domain.models import Role
+from project.core.db.utils import exists_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -99,3 +104,37 @@ class RoleService:
                 )
 
             return upd_role
+
+    async def deactivate(self, role_id: uuid.UUID) -> bool:
+        """Deactivate the role."""
+        async with self.uow as uow:
+            role: Role | None = await uow.roles.get_by_id_detail(role_id)
+            if not role:
+                raise RoleNotFound(role_id)
+
+            active_relationships = exists_relationships(role)
+            if active_relationships:
+                raise RoleNotEmpty(
+                    role_name=role.name.value,
+                    rel_names=active_relationships,
+                )
+
+            if role.is_active:
+                role.is_active = False
+                await uow.commit()
+                await uow.refresh(role)
+        return True
+
+    async def activate(self, role_id: uuid.UUID) -> bool:
+        """Activate the role."""
+        async with self.uow as uow:
+            role: Role | None = await uow.roles.get_by_id(
+                role_id=role_id,
+            )
+            if not role:
+                raise RoleNotFound(role_id)
+            if not role.is_active:
+                role.is_active = True
+                await uow.commit()
+                await uow.refresh(role)
+        return True

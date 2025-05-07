@@ -9,10 +9,12 @@ from project.app_org.application.schemas import (
 )
 from project.app_org.domain.exceptions import (
     CommandNotFound,
+    DepartmentNotEmpty,
     DepartmentNotFound,
     RoleNotFound,
 )
 from project.app_org.domain.models import Department, Role
+from project.core.db.utils import exists_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -99,6 +101,42 @@ class DepartmentService:
                 )
 
             return upd_department
+
+    async def deactivate(self, department_id: uuid.UUID) -> bool:
+        """Deactivate the department."""
+        async with self.uow as uow:
+            department: Department | None = (
+                await uow.departments.get_by_id_detail(department_id)
+            )
+            if not department:
+                raise DepartmentNotFound(department_id)
+
+            active_relationships = exists_relationships(department)
+            if active_relationships:
+                raise DepartmentNotEmpty(
+                    department_name=department.name,
+                    rel_names=active_relationships,
+                )
+
+            if department.is_active:
+                department.is_active = False
+                await uow.commit()
+                await uow.refresh(department)
+        return True
+
+    async def activate(self, department_id: uuid.UUID) -> bool:
+        """Activate the department."""
+        async with self.uow as uow:
+            department: Department | None = await uow.departments.get_by_id(
+                department_id=department_id,
+            )
+            if not department:
+                raise DepartmentNotFound(department_id)
+            if not department.is_active:
+                department.is_active = True
+                await uow.commit()
+                await uow.refresh(department)
+        return True
 
     async def list_roles(
         self,

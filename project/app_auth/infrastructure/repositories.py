@@ -37,6 +37,16 @@ class SAUserRepository(AbstractUserRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_id_role(self, user_id: uuid.UUID) -> User | None:
+        """Get the user by ID with role."""
+        stmt = (
+            select(User)
+            .options(selectinload(User.role))
+            .where(User.id == user_id)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_by_id_detail(self, user_id: uuid.UUID) -> User | None:
         """Get the user by ID. Load related objects."""
         stmt = (

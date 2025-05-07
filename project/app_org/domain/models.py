@@ -7,15 +7,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import UUID as UUID_SQL
-from sqlalchemy import (
-    DateTime,
-)
+from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import (
-    ForeignKey,
-    String,
-    func,
-)
+from sqlalchemy import ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from project.app_org.application.enums import RoleType
@@ -45,6 +39,7 @@ class Command(Base):
         nullable=True,
         default=None,
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -57,6 +52,11 @@ class Command(Base):
 
     users: Mapped[list[Department]] = relationship(
         "User",
+        back_populates="command",
+        cascade="save-update, merge",
+    )
+    roles: Mapped[list[Role]] = relationship(
+        "Role",
         back_populates="command",
         cascade="save-update, merge",
     )
@@ -88,6 +88,7 @@ class Department(Base):
         nullable=True,
         default=None,
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -145,6 +146,7 @@ class Role(Base):
         nullable=True,
         default=None,
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -155,6 +157,16 @@ class Role(Base):
         onupdate=func.now(),
     )
 
+    command_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey(
+            "commands.id",
+            ondelete="RESTRICT",
+            name="fk_roles_command_id",
+        ),
+        nullable=True,
+        index=True,
+        default=None,
+    )
     department_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
             "departments.id",
@@ -166,6 +178,9 @@ class Role(Base):
         default=None,
     )
 
+    command: Mapped[Command] = relationship(
+        back_populates="roles",
+    )
     department: Mapped[Department] = relationship(
         back_populates="roles",
     )

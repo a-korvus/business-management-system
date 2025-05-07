@@ -13,6 +13,7 @@ from project.app_org.application.interfaces import (
     AbsRoleRepository,
 )
 from project.app_org.domain.models import Command, Department, News, Role
+from project.core.db.utils import load_all_relationships
 
 
 class SACommandRepo(AbsCommandRepository):
@@ -46,6 +47,17 @@ class SACommandRepo(AbsCommandRepository):
             .where(Command.id == command_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_id_detail(self, command_id: uuid.UUID) -> Command | None:
+        """Get Command by its ID with all relation models."""
+        stmt = (
+            select(Command)
+            .options(*load_all_relationships(Command))
+            .where(Command.id == command_id)
+        )
+
+        result = await self._session.execute(stmt)
+        return result.unique().scalar_one_or_none()
 
     async def get_by_name(self, name: str) -> Command | None:
         """Get the command by name."""
@@ -98,6 +110,20 @@ class SADepartmentRepo(AbsDepartmentRepository):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_detail(
+        self,
+        department_id: uuid.UUID,
+    ) -> Department | None:
+        """Get Department by its ID with all relation models."""
+        stmt = (
+            select(Department)
+            .options(*load_all_relationships(Department))
+            .where(Department.id == department_id)
+        )
+
+        result = await self._session.execute(stmt)
+        return result.unique().scalar_one_or_none()
+
     async def list_all(self) -> list[Department]:
         """Get all departments."""
         result = await self._session.execute(
@@ -142,6 +168,17 @@ class SARoleRepo(AbsRoleRepository):
             .where(Role.id == role_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_id_detail(self, role_id: uuid.UUID) -> Role | None:
+        """Get Role by its ID with all relation models."""
+        stmt = (
+            select(Role)
+            .options(*load_all_relationships(Role))
+            .where(Role.id == role_id)
+        )
+
+        result = await self._session.execute(stmt)
+        return result.unique().scalar_one_or_none()
 
     async def list_all(self) -> list[Role]:
         """Get all role."""

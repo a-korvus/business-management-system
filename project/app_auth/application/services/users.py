@@ -76,6 +76,11 @@ class UserService:
         async with self.uow:
             return await self.uow.users.get_by_id_detail(user_id)
 
+    async def get_by_id_with_role(self, user_id: uuid.UUID) -> User | None:
+        """Get the user by ID. Load related role."""
+        async with self.uow:
+            return await self.uow.users.get_by_id_role(user_id)
+
     async def get_user_by_email(self, email: str) -> User | None:
         """Get user by email.
 

@@ -40,6 +40,11 @@ class AbstractUserRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def get_by_id_role(self, user_id: uuid.UUID) -> User | None:
+        """Get the user by ID with role."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def get_by_id_detail(self, user_id: uuid.UUID) -> "User" | None:
         """Get User by its ID with all relationships."""
         raise NotImplementedError

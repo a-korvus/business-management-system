@@ -39,6 +39,7 @@ class CommandRead(CommandBase):
 
     id: uuid.UUID
     name: str
+    is_active: bool
     created_at: datetime
     updated_at: datetime
 
@@ -69,6 +70,7 @@ class DepartmentRead(DepartmentBase):
 
     id: uuid.UUID
     name: str
+    is_active: bool
     created_at: datetime
     updated_at: datetime
     command_id: uuid.UUID | None
@@ -124,6 +126,7 @@ class RoleRead(RoleBase):
 
     id: uuid.UUID
     name: RoleType
+    is_active: bool
     created_at: datetime
     updated_at: datetime
     department_id: uuid.UUID | None

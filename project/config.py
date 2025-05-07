@@ -139,6 +139,7 @@ class ProjectSettings(BaseSettings):
     DEV_MODE: bool = False
     LOG_DIR: Path = ROOT_DIR / "log"
     ADMIN_SECRET_KEY: str = ""
+    MASTER_COMMAND_NAME: str = ""
     MASTER_EMAIL: str = ""
     MASTER_PASSWORD: str = ""
     PREFIX_ORG: str = "/org"

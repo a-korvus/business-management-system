@@ -40,7 +40,7 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     middleware=middlewares,
     title="Business management system.",
-    description="Microservice app. Business vanagement and control system",
+    description="Microservice app. Business management and control system",
 )
 
 app_admin = Admin(

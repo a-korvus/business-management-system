@@ -18,6 +18,8 @@ from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import get_password_hasher
 from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
+from project.app_org.application.enums import RoleType
+from project.app_org.presentation.exceptions import AccessRightsError
 from project.config import settings
 from project.core.db.setup import AsyncSessionFactory
 from project.core.log_config import get_logger
@@ -92,6 +94,42 @@ async def get_current_user(
             raise CredentialException(
                 detail="Could not validate credentials (user inactive)"
             )
+
+        return user
+    except ValueError:  # ValueError если UUID невалидный
+        logger.exception("UUID invalid: %s", user_id)
+        raise CredentialException()
+
+
+async def get_admin(
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> User:
+    """Get current user from DB based on token data if he has admin role.
+
+    Raises:
+        AccessRightsError: If user isn't administrator.
+
+    Returns:
+        User: Authenticated user that has an admin role.
+    """
+    try:
+        user_id = uuid.UUID(token_data.uid)
+        user: User | None = await user_service.get_by_id_detail(user_id)
+
+        if user is None:
+            raise CredentialException(
+                detail="Could not validate credentials (user not found)"
+            )
+        elif not user.is_active:
+            raise CredentialException(
+                detail="Could not validate credentials (user inactive)"
+            )
+        elif (
+            user.role != RoleType.ADMINISTRATOR
+            and user.command.name != settings.MASTER_COMMAND_NAME
+        ):
+            raise AccessRightsError()
 
         return user
     except ValueError:  # ValueError если UUID невалидный

@@ -9,10 +9,12 @@ from project.app_org.application.schemas import (
 )
 from project.app_org.domain.exceptions import (
     CommandNameExistsError,
+    CommandNotEmpty,
     CommandNotFound,
     DepartmentNotFound,
 )
 from project.app_org.domain.models import Command, Department
+from project.core.db.utils import exists_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -104,6 +106,40 @@ class CommandService:
                 )
 
             return upd_command
+
+    async def deactivate(self, command_id: uuid.UUID) -> bool:
+        """Deactivate the command."""
+        async with self.uow as uow:
+            command: Command | None = await uow.commands.get_by_id_detail(
+                command_id
+            )
+            if not command:
+                raise CommandNotFound(command_id)
+
+            active_relationships = exists_relationships(command)
+            if active_relationships:
+                raise CommandNotEmpty(
+                    command_name=command.name,
+                    rel_names=active_relationships,
+                )
+
+            if command.is_active:
+                command.is_active = False
+                await uow.commit()
+                await uow.refresh(command)
+        return True
+
+    async def activate(self, command_id: uuid.UUID) -> bool:
+        """Activate the command."""
+        async with self.uow as uow:
+            command: Command | None = await uow.commands.get_by_id(command_id)
+            if not command:
+                raise CommandNotFound(command_id)
+            if not command.is_active:
+                command.is_active = True
+                await uow.commit()
+                await uow.refresh(command)
+        return True
 
     async def list_departments(
         self,
