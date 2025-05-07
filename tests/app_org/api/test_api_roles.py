@@ -17,16 +17,27 @@ ORG_PREFIX = settings.PREFIX_ORG
 async def test_create_role(
     httpx_test_client: AsyncClient,
     fake_role_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test creating a new role."""
+    # unauthorized response
     response: Response = await httpx_test_client.post(
         url=f"{ORG_PREFIX}/roles/",
         json=fake_role_data,
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 401
 
-    response_data = response.json()
+    # master authorized response
+    master_response: Response = await httpx_test_client.post(
+        url=f"{ORG_PREFIX}/roles/",
+        json=fake_role_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert master_response.status_code == 201
+
+    response_data = master_response.json()
 
     assert isinstance(response_data, dict)
     assert response_data.get("id") is not None
@@ -40,16 +51,18 @@ async def test_create_role(
 async def test_get_roles(
     httpx_test_client: AsyncClient,
     fake_role_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving all roles."""
     roles_count = 0
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/roles/",
             json=fake_role_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
         roles_count += 1
 
@@ -68,18 +81,20 @@ async def test_get_roles(
 async def test_get_specific_role(
     httpx_test_client: AsyncClient,
     fake_role_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving the role."""
     roles = list()
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/roles/",
             json=fake_role_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
-        response_create_data = response_create.json()
+        response_create_data = master_response_create.json()
 
         assert isinstance(response_create_data, dict)
 
@@ -107,18 +122,20 @@ async def test_get_specific_role(
 async def test_update_role(
     httpx_test_client: AsyncClient,
     fake_role_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test updating the role."""
     roles = list()
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/roles/",
             json=fake_role_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
-        response_create_data = response_create.json()
+        response_create_data = master_response_create.json()
 
         assert isinstance(response_create_data, dict)
 
@@ -132,14 +149,15 @@ async def test_update_role(
 
     assert some_role_id is not None
 
-    response_update = await httpx_test_client.put(
+    master_response_update = await httpx_test_client.put(
         url=f"{ORG_PREFIX}/roles/{some_role_id}/",
         json=updating_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
     )
 
-    assert response_update.status_code == 200
+    assert master_response_update.status_code == 200
 
-    response_update_data = response_update.json()
+    response_update_data = master_response_update.json()
 
     assert isinstance(response_update_data, dict)
     assert some_role_id == response_update_data.get("id")
@@ -149,3 +167,50 @@ async def test_update_role(
     assert updating_data.get("description") == response_update_data.get(
         "description"
     )
+
+
+async def test_deactivate_activate_role(
+    httpx_test_client: AsyncClient,
+    fake_role_data: dict,
+    get_master_token: str,
+) -> None:
+    """Test deactivating the role then activating it."""
+    roles = list()
+    for _ in range(random.randint(10, 20)):
+        master_response_create: Response = await httpx_test_client.post(
+            url=f"{ORG_PREFIX}/roles/",
+            json=fake_role_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
+        )
+
+        assert master_response_create.status_code == 201
+
+        response_create_data = master_response_create.json()
+
+        assert isinstance(response_create_data, dict)
+
+        roles.append(response_create_data)
+
+    some_role: dict = random.choice(roles)
+    some_role_id = some_role.get("id")
+
+    assert some_role_id is not None
+
+    resp_deactivate = await httpx_test_client.delete(
+        url=f"{ORG_PREFIX}/roles/{some_role_id}/",
+    )
+
+    assert resp_deactivate.status_code == 401
+
+    master_resp_deactivate = await httpx_test_client.delete(
+        url=f"{ORG_PREFIX}/roles/{some_role_id}/",
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+    assert master_resp_deactivate.status_code == 204
+
+    master_resp_activate = await httpx_test_client.post(
+        url=f"{ORG_PREFIX}/roles/{some_role_id}/activate/",
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert master_resp_activate.status_code == 200

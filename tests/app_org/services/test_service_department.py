@@ -32,6 +32,7 @@ async def test_create(
 
     assert isinstance(department, Department)
     assert department.id is not None
+    assert department.is_active is True
     assert isinstance(department.created_at, datetime)
     assert isinstance(department.updated_at, datetime)
     assert isinstance(department.roles, list)
@@ -213,3 +214,34 @@ async def test_list_roles(
 
     assert isinstance(upgraded_dep, Department)
     assert len(upgraded_dep.roles) == role_count
+
+
+async def test_deactivate_activate(
+    verify_department_service: DepartmentService,
+    fake_department_schema: DepartmentCreate,
+    uow_sess_factory: Callable[[], AbsUnitOfWork],
+) -> None:
+    """Test deactivating the existing department and then activating it."""
+    alter_department_service = DepartmentService(uow=uow_sess_factory())
+    new_department = await alter_department_service.create(
+        data=fake_department_schema,
+    )
+
+    assert isinstance(new_department, Department)
+    assert new_department.is_active is True
+
+    await verify_department_service.deactivate(new_department.id)
+
+    deact_department = await alter_department_service.get_by_id(
+        department_id=new_department.id,
+    )
+    assert isinstance(deact_department, Department)
+    assert deact_department.is_active is False
+
+    await verify_department_service.activate(new_department.id)
+
+    act_department = await alter_department_service.get_by_id(
+        department_id=new_department.id,
+    )
+    assert isinstance(act_department, Department)
+    assert act_department.is_active is True

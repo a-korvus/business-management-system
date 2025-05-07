@@ -17,16 +17,27 @@ ORG_PREFIX = settings.PREFIX_ORG
 async def test_create_department(
     httpx_test_client: AsyncClient,
     fake_department_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test creating a new department."""
+    # unauthorized response
     response: Response = await httpx_test_client.post(
         url=f"{ORG_PREFIX}/departments/",
         json=fake_department_data,
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 401
 
-    response_data = response.json()
+    # master authorized response
+    master_response: Response = await httpx_test_client.post(
+        url=f"{ORG_PREFIX}/departments/",
+        json=fake_department_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert master_response.status_code == 201
+
+    response_data = master_response.json()
 
     assert isinstance(response_data, dict)
     assert response_data.get("id") is not None
@@ -42,16 +53,18 @@ async def test_create_department(
 async def test_get_departments(
     httpx_test_client: AsyncClient,
     fake_department_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving all departments."""
     departments_count = 0
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/departments/",
             json=fake_department_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
         departments_count += 1
 
@@ -70,18 +83,20 @@ async def test_get_departments(
 async def test_get_specific_department(
     httpx_test_client: AsyncClient,
     fake_department_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving the department."""
     departments = list()
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/departments/",
             json=fake_department_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
-        response_create_data = response_create.json()
+        response_create_data = master_response_create.json()
 
         assert isinstance(response_create_data, dict)
 
@@ -109,18 +124,20 @@ async def test_get_specific_department(
 async def test_update_department(
     httpx_test_client: AsyncClient,
     fake_department_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test updating the department."""
     departments = list()
     for _ in range(random.randint(10, 20)):
-        response_create: Response = await httpx_test_client.post(
+        master_response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/departments/",
             json=fake_department_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
-        assert response_create.status_code == 201
+        assert master_response_create.status_code == 201
 
-        response_create_data = response_create.json()
+        response_create_data = master_response_create.json()
 
         assert isinstance(response_create_data, dict)
 
@@ -139,9 +156,16 @@ async def test_update_department(
         json=updating_data,
     )
 
-    assert response_update.status_code == 200
+    assert response_update.status_code == 401
 
-    response_update_data = response_update.json()
+    master_response_update = await httpx_test_client.put(
+        url=f"{ORG_PREFIX}/departments/{some_department_id}/",
+        json=updating_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+    assert master_response_update.status_code == 200
+
+    response_update_data = master_response_update.json()
 
     assert isinstance(response_update_data, dict)
     assert some_department_id == response_update_data.get("id")
@@ -151,3 +175,50 @@ async def test_update_department(
     assert updating_data.get("description") == response_update_data.get(
         "description"
     )
+
+
+async def test_deactivate_activate_department(
+    httpx_test_client: AsyncClient,
+    fake_department_data: dict,
+    get_master_token: str,
+) -> None:
+    """Test deactivating the department then activating it."""
+    departments = list()
+    for _ in range(random.randint(10, 20)):
+        master_response_create: Response = await httpx_test_client.post(
+            url=f"{ORG_PREFIX}/departments/",
+            json=fake_department_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
+        )
+
+        assert master_response_create.status_code == 201
+
+        response_create_data = master_response_create.json()
+
+        assert isinstance(response_create_data, dict)
+
+        departments.append(response_create_data)
+
+    some_department: dict = random.choice(departments)
+    some_department_id = some_department.get("id")
+
+    assert some_department_id is not None
+
+    resp_deactivate = await httpx_test_client.delete(
+        url=f"{ORG_PREFIX}/departments/{some_department_id}/",
+    )
+
+    assert resp_deactivate.status_code == 401
+
+    master_resp_deactivate = await httpx_test_client.delete(
+        url=f"{ORG_PREFIX}/departments/{some_department_id}/",
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+    assert master_resp_deactivate.status_code == 204
+
+    master_resp_activate = await httpx_test_client.post(
+        url=f"{ORG_PREFIX}/departments/{some_department_id}/activate/",
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert master_resp_activate.status_code == 200

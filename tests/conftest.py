@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from project.app_admin.create_master import create_master
 from project.app_auth.domain.models import Profile, User  # noqa
 from project.app_org.domain.models import (  # noqa
     Command,
@@ -200,3 +201,20 @@ async def httpx_test_client() -> AsyncGenerator[AsyncClient, None]:
         base_url="http://test",
     ) as client:
         yield client
+
+
+@pytest.fixture(scope="function")
+async def get_master_token(
+    httpx_test_client: AsyncClient,
+) -> str:
+    """Create master user and return master auth token."""
+    await create_master()
+    response = await httpx_test_client.post(
+        url=f"{settings.AUTH.PREFIX_AUTH}/login/",
+        data={
+            "username": settings.MASTER_EMAIL,
+            "password": settings.MASTER_PASSWORD,
+        },
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]

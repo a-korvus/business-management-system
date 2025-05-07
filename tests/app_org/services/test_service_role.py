@@ -27,6 +27,7 @@ async def test_create(
 
     assert isinstance(role, Role)
     assert role.id is not None
+    assert role.is_active is True
     assert isinstance(role.created_at, datetime)
     assert isinstance(role.updated_at, datetime)
     assert role.department is None
@@ -113,3 +114,34 @@ async def test_update(
     assert new_role.description != updated_role.description
     assert updating_data.description == updated_role.description
     assert updated_role.updated_at > new_role.updated_at
+
+
+async def test_deactivate_activate(
+    verify_role_service: RoleService,
+    fake_role_schema: RoleCreate,
+    uow_sess_factory: Callable[[], AbsUnitOfWork],
+) -> None:
+    """Test deactivating the existing role and then activating it."""
+    alter_role_service = RoleService(uow=uow_sess_factory())
+    new_role = await alter_role_service.create(
+        data=fake_role_schema,
+    )
+
+    assert isinstance(new_role, Role)
+    assert new_role.is_active is True
+
+    await verify_role_service.deactivate(new_role.id)
+
+    deact_role = await alter_role_service.get_by_id(
+        role_id=new_role.id,
+    )
+    assert isinstance(deact_role, Role)
+    assert deact_role.is_active is False
+
+    await verify_role_service.activate(new_role.id)
+
+    act_role = await alter_role_service.get_by_id(
+        role_id=new_role.id,
+    )
+    assert isinstance(act_role, Role)
+    assert act_role.is_active is True

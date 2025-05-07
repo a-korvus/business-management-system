@@ -33,6 +33,7 @@ async def test_create(
 
     assert isinstance(new_command, Command)
     assert new_command.id is not None
+    assert new_command.is_active is True
     assert isinstance(new_command.created_at, datetime)
     assert isinstance(new_command.updated_at, datetime)
     assert isinstance(new_command.departments, list)
@@ -223,3 +224,28 @@ async def test_list_departments(
 
     assert isinstance(upgraded_command, Command)
     assert len(upgraded_command.departments) == department_count
+
+
+async def test_deactivate_activate(
+    verify_command_service: CommandService,
+    fake_command_schema: CommandCreate,
+    uow_sess_factory: Callable[[], AbsUnitOfWork],
+) -> None:
+    """Test deactivating the existing command and then activating it."""
+    alter_command_service = CommandService(uow=uow_sess_factory())
+    new_command = await alter_command_service.create(data=fake_command_schema)
+
+    assert isinstance(new_command, Command)
+    assert new_command.is_active is True
+
+    await verify_command_service.deactivate(new_command.id)
+
+    deact_command = await alter_command_service.get_by_id(new_command.id)
+    assert isinstance(deact_command, Command)
+    assert deact_command.is_active is False
+
+    await verify_command_service.activate(new_command.id)
+
+    act_command = await alter_command_service.get_by_id(new_command.id)
+    assert isinstance(act_command, Command)
+    assert act_command.is_active is True
