@@ -5,6 +5,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from project.app_auth.domain.models import User
+from project.app_auth.presentation.dependencies import get_admin
 from project.app_org.application.schemas import (
     NewsCreate,
     NewsRead,
@@ -35,6 +37,7 @@ router = APIRouter(
 async def new_post(
     data: NewsCreate,
     news_service: Annotated[NewsService, Depends(get_news_service)],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> News:
     """Create a new information post."""
     try:
@@ -106,6 +109,7 @@ async def update_post(
     post_id: uuid.UUID,
     updating_data: NewsUpdate,
     news_service: Annotated[NewsService, Depends(get_news_service)],
+    admin: Annotated[User, Depends(get_admin)],
 ) -> News:
     """Update the post by ID."""
     try:

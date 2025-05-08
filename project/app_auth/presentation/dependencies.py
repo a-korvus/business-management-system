@@ -16,7 +16,7 @@ from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import get_password_hasher
-from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 from project.app_auth.presentation.exceptions import CredentialException
 from project.app_org.application.enums import RoleType
 from project.app_org.presentation.exceptions import AccessRightsError
@@ -34,7 +34,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 def get_uow() -> AbstractUnitOfWork:
     """Get Unit of Work instance."""
     # фабрику сессий получаем в конструкторе класса по умолчанию
-    return SAUnitOfWork(session_factory=AsyncSessionFactory)
+    return SAAuthUnitOfWork(session_factory=AsyncSessionFactory)
 
 
 def get_auth_service(

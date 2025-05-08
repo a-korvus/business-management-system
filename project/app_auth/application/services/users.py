@@ -60,14 +60,7 @@ class UserService:
         return user
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
-        """Get user by ID.
-
-        Args:
-            user_id (uuid.UUID): User ID in DB.
-
-        Returns:
-            User | None: User instance if it exists.
-        """
+        """Get user by ID."""
         async with self.uow:
             return await self.uow.users.get_by_id(user_id)
 
@@ -82,14 +75,7 @@ class UserService:
             return await self.uow.users.get_by_id_role(user_id)
 
     async def get_user_by_email(self, email: str) -> User | None:
-        """Get user by email.
-
-        Args:
-            email (str): User email in DB.
-
-        Returns:
-        User | None: User instance if it exists.
-        """
+        """Get user by email."""
         async with self.uow:
             return await self.uow.users.get_by_email(email)
 
@@ -204,4 +190,18 @@ class UserService:
             user.activate()
             await uow.commit()
             await uow.refresh(user)
+            return user
+
+    async def revoke_role(self, user_id: uuid.UUID) -> User:
+        """Revoke a role from a user."""
+        async with self.uow as uow:
+            user: User | None = await uow.users.get_by_id(user_id)
+            if not user:
+                raise UserNotFound(user_id=user_id)
+
+            if user.role_id:
+                user.role_id = None
+                await uow.commit()
+                await uow.refresh(user)
+
             return user

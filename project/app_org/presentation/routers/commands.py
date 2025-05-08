@@ -56,7 +56,7 @@ async def create_command(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    except Exception as e:  # любые непредвиденные ошибки # noqa
+    except Exception as e:  # noqa
         logger.exception("Unexpected error while creating new command.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

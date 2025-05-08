@@ -12,7 +12,7 @@ from project.app_auth.application.interfaces import (
 from project.app_auth.infrastructure.repositories import SAUserRepository
 
 
-class SAUnitOfWork(AbstractUnitOfWork):
+class SAAuthUnitOfWork(AbstractUnitOfWork):
     """Unit of work implementation using SQLAlchemy."""
 
     def __init__(
@@ -21,17 +21,19 @@ class SAUnitOfWork(AbstractUnitOfWork):
         session: AsyncSession | None = None,
     ) -> None:
         """Initialize the unit of work."""
-        if session_factory is None and session is None:
+        if not any((session_factory, session)):
             raise ValueError(f"{self.__class__.__name__} has not session!")
 
-        if session_factory and session:
+        if all((session_factory, session)):
             raise ValueError(
                 f"{self.__class__.__name__} must have either a "
-                "session factory or a session, not both!"
+                "'session_factory' or a 'session', not both!"
             )
 
         self._session_factory = session_factory
-        self._session = session
+        self._external_session = session
+
+        self._session: AsyncSession | None = session
 
     async def __aenter__(self) -> Self:
         """Enter to context manager. Create a session and repositories."""
@@ -52,11 +54,16 @@ class SAUnitOfWork(AbstractUnitOfWork):
 
         Rollback if error occurs. Close session anyway.
         """
-        if self._session:
+        if not self._session:
+            return
+
+        try:
             if exc_type:
-                await self.rollback()  # откат при ЛЮБОЙ ошибке
-            await self._session.close()  # закрыть сессию в любом случае
-            self._session = None
+                await self.rollback()
+        finally:
+            if self._session_factory:
+                await self._session.close()
+                self._session = None
 
     async def commit(self) -> None:
         """Commit the current transaction."""
@@ -66,8 +73,8 @@ class SAUnitOfWork(AbstractUnitOfWork):
         try:
             await self._session.commit()
         except Exception:  # noqa
-            await self.rollback()  # откат при ЛЮБОЙ ошибке коммита
-            raise  # проброс исключения выше
+            await self.rollback()
+            raise
 
     async def refresh(
         self,

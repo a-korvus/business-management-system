@@ -52,7 +52,7 @@ class User(Base):
         onupdate=func.now(),
     )
 
-    command_id: Mapped[uuid.UUID] = mapped_column(
+    command_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "commands.id", ondelete="RESTRICT", name="fk_users_command_id"
         ),
@@ -60,7 +60,7 @@ class User(Base):
         index=True,
         default=None,
     )
-    role_id: Mapped[uuid.UUID] = mapped_column(
+    role_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("roles.id", ondelete="RESTRICT", name="fk_users_role_id"),
         nullable=True,
         index=True,

@@ -134,6 +134,12 @@ class RoleRead(RoleBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AssignRolePayload(BaseModel):
+    """Schema to validate role ID before assigning to user."""
+
+    role_id: uuid.UUID
+
+
 class NewsBase(BaseModel):
     """News base schema."""
 

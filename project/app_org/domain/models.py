@@ -99,7 +99,7 @@ class Department(Base):
         onupdate=func.now(),
     )
 
-    command_id: Mapped[uuid.UUID] = mapped_column(
+    command_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "commands.id",
             ondelete="RESTRICT",
@@ -157,7 +157,7 @@ class Role(Base):
         onupdate=func.now(),
     )
 
-    command_id: Mapped[uuid.UUID] = mapped_column(
+    command_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "commands.id",
             ondelete="RESTRICT",
@@ -167,7 +167,7 @@ class Role(Base):
         index=True,
         default=None,
     )
-    department_id: Mapped[uuid.UUID] = mapped_column(
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "departments.id",
             ondelete="RESTRICT",

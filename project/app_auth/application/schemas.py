@@ -35,6 +35,8 @@ class UserRead(UserBase):
     command_id: uuid.UUID | None
     role_id: uuid.UUID | None
 
+    profile: ProfileRead
+
     model_config = ConfigDict(from_attributes=True)
 
 
