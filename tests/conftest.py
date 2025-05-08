@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from project.app_admin.create_master import create_master
+from project.app_auth.application.schemas import UserCreate
 from project.app_auth.domain.models import Profile, User  # noqa
 from project.app_org.domain.models import (  # noqa
     Command,
@@ -109,12 +110,6 @@ async def db_engine(
             )
         pytest.fail(f"Failed to configure test environment: {e}")
         raise  # исходная ошибка настройки, чтобы тесты не запустились
-
-
-@pytest.fixture(scope="function")
-def fake_instance() -> Faker:
-    """Get Faker instance."""
-    return Faker()
 
 
 @pytest.fixture(scope="function")
@@ -218,3 +213,18 @@ async def get_master_token(
     )
     response.raise_for_status()
     return response.json()["access_token"]
+
+
+@pytest.fixture(scope="function")
+def fake_instance() -> Faker:
+    """Get Faker instance."""
+    return Faker()
+
+
+@pytest.fixture(scope="function")
+def fake_user_schema(fake_instance: Faker) -> UserCreate:
+    """Define the fake user for tests."""
+    return UserCreate(
+        email=fake_instance.email(),
+        password=fake_instance.password(),
+    )

@@ -17,16 +17,27 @@ ORG_PREFIX = settings.PREFIX_ORG
 async def test_new_post(
     httpx_test_client: AsyncClient,
     fake_news_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test creating a new post."""
+    # unauthorized response
     response: Response = await httpx_test_client.post(
         url=f"{ORG_PREFIX}/news/",
         json=fake_news_data,
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 401
 
-    response_data = response.json()
+    # master authorized response
+    master_response: Response = await httpx_test_client.post(
+        url=f"{ORG_PREFIX}/news/",
+        json=fake_news_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert master_response.status_code == 201
+
+    response_data = master_response.json()
 
     assert isinstance(response_data, dict)
     assert response_data.get("id") is not None
@@ -36,6 +47,7 @@ async def test_new_post(
 async def test_get_news(
     httpx_test_client: AsyncClient,
     fake_news_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving all news."""
     news_count = 0
@@ -43,6 +55,7 @@ async def test_get_news(
         response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/news/",
             json=fake_news_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
         assert response_create.status_code == 201
@@ -62,6 +75,7 @@ async def test_get_news(
 async def test_get_news_post(
     httpx_test_client: AsyncClient,
     fake_news_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test retrieving the post."""
     news = list()
@@ -69,6 +83,7 @@ async def test_get_news_post(
         response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/news/",
             json=fake_news_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
         assert response_create.status_code == 201
@@ -101,6 +116,7 @@ async def test_get_news_post(
 async def test_update_post(
     httpx_test_client: AsyncClient,
     fake_news_data: dict,
+    get_master_token: str,
 ) -> None:
     """Test updating the post."""
     news = list()
@@ -108,6 +124,7 @@ async def test_update_post(
         response_create: Response = await httpx_test_client.post(
             url=f"{ORG_PREFIX}/news/",
             json=fake_news_data,
+            headers={"Authorization": f"Bearer {get_master_token}"},
         )
 
         assert response_create.status_code == 201
@@ -126,14 +143,24 @@ async def test_update_post(
 
     assert some_post_id is not None
 
-    response_update = await httpx_test_client.put(
+    # unauthorized response
+    response = await httpx_test_client.put(
         url=f"{ORG_PREFIX}/news/{some_post_id}/",
         json=updating_data,
     )
 
-    assert response_update.status_code == 200
+    assert response.status_code == 401
 
-    response_update_data = response_update.json()
+    # master authorized response
+    master_response = await httpx_test_client.put(
+        url=f"{ORG_PREFIX}/news/{some_post_id}/",
+        json=updating_data,
+        headers={"Authorization": f"Bearer {get_master_token}"},
+    )
+
+    assert response.status_code == 401
+
+    response_update_data = master_response.json()
 
     assert isinstance(response_update_data, dict)
     assert some_post_id == response_update_data.get("id")

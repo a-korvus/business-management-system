@@ -3,7 +3,6 @@
 from typing import Any, Callable
 
 import pytest
-from faker import Faker
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +13,7 @@ from project.app_auth.application.interfaces import (
 from project.app_auth.application.schemas import UserCreate
 from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
-from project.app_auth.infrastructure.unit_of_work import SAUnitOfWork
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 from project.config import settings
 from project.core.log_config import get_logger
 
@@ -42,15 +41,6 @@ def fake_hasher() -> FakePasswordHasher:
 
 
 @pytest.fixture(scope="function")
-def fake_user_schema(fake_instance: Faker) -> UserCreate:
-    """Define the fake user for tests."""
-    return UserCreate(
-        email=fake_instance.email(),
-        password=fake_instance.password(),
-    )
-
-
-@pytest.fixture(scope="function")
 def uow_factory(
     db_session: AsyncSession,
 ) -> Callable[[], AbstractUnitOfWork]:
@@ -59,7 +49,7 @@ def uow_factory(
 
     def _create_uow() -> AbstractUnitOfWork:
         logger.debug("New UoW created with db_session: '%d'", id(db_session))
-        return SAUnitOfWork(session=db_session)
+        return SAAuthUnitOfWork(session=db_session)
 
     return _create_uow
 

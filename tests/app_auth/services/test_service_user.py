@@ -21,6 +21,11 @@ from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.models import Profile, User
 from project.app_auth.infrastructure.security import get_password_hasher
+from project.app_org.application.schemas import RoleCreate
+from project.app_org.application.services.role import RoleService
+from project.app_org.domain.models import Role
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
+from project.core.db.setup import AsyncSessionFactory
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
@@ -209,3 +214,43 @@ async def test_restore_user(
     assert isinstance(restored_user, User)
     assert restored_user.id == new_user.id
     assert restored_user.is_active
+
+
+async def test_revoke_role(
+    verify_user_service: UserService,
+    fake_user_schema: UserCreate,
+    fake_hasher: PasswordHasher,
+    db_session: AsyncSession,
+) -> None:
+    """Test revoking user role."""
+    new_user = User(
+        email=fake_user_schema.email,
+        plain_password=fake_user_schema.password,
+        hasher=fake_hasher,
+    )
+    db_session.add(new_user)
+    await db_session.commit()
+
+    assert isinstance(new_user, User)
+    assert new_user.id is not None
+    assert new_user.role_id is None
+
+    role_service = RoleService(
+        uow=SAOrgUnitOfWork(session_factory=AsyncSessionFactory),
+    )
+
+    new_role = await role_service.create(RoleCreate())
+
+    assert isinstance(new_role, Role)
+    assert new_role.id is not None
+
+    new_user.role_id = new_role.id
+    await db_session.commit()
+
+    assert new_user.role_id == new_role.id
+
+    demoted_user = await verify_user_service.revoke_role(user_id=new_user.id)
+
+    assert isinstance(demoted_user, User)
+    assert demoted_user.id == new_user.id
+    assert demoted_user.role_id is None
