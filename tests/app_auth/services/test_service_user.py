@@ -7,10 +7,7 @@ import pytest
 from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import (
     LoginSchema,
     ProfileUpdate,
@@ -26,6 +23,7 @@ from project.app_org.application.services.role import RoleService
 from project.app_org.domain.models import Role
 from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.db.setup import AsyncSessionFactory
+from project.core.interfaces import AbsUnitOfWork
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
@@ -107,7 +105,7 @@ async def test_get_all_users(
 
 async def test_deactivate_activate_user(
     verify_user_service: UserService,
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow_factory: Callable[[], AbsUnitOfWork],
     fake_user_schema: UserCreate,
     fake_hasher: PasswordHasher,
     db_session: AsyncSession,

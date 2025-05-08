@@ -1,9 +1,6 @@
 """Auth-related service in 'app_auth'."""
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import (
     LoginSchema,
     Token,
@@ -17,6 +14,7 @@ from project.app_auth.domain.exceptions import (
     InvalidPasswordFormatError,
 )
 from project.app_auth.domain.models import User
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 from project.app_org.domain.exceptions import CommandNotFound
 from project.core.log_config import get_logger
 
@@ -28,7 +26,7 @@ class AuthService:
 
     def __init__(
         self,
-        uow: AbstractUnitOfWork,
+        uow: SAAuthUnitOfWork,
         hasher: PasswordHasher,
     ) -> None:
         """Initialize the service object. Set UoW and password hasher."""

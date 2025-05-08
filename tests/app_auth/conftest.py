@@ -6,10 +6,7 @@ import pytest
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import UserCreate
 from project.app_auth.application.services.auth import AuthService
 from project.app_auth.application.services.users import UserService
@@ -43,11 +40,11 @@ def fake_hasher() -> FakePasswordHasher:
 @pytest.fixture(scope="function")
 def uow_factory(
     db_session: AsyncSession,
-) -> Callable[[], AbstractUnitOfWork]:
+) -> Callable[[], SAAuthUnitOfWork]:
     """Factory to create UoW instances using the same test session."""
     logger.debug("uow_factory created with db_session: '%d'", id(db_session))
 
-    def _create_uow() -> AbstractUnitOfWork:
+    def _create_uow() -> SAAuthUnitOfWork:
         logger.debug("New UoW created with db_session: '%d'", id(db_session))
         return SAAuthUnitOfWork(session=db_session)
 
@@ -56,7 +53,7 @@ def uow_factory(
 
 @pytest.fixture(scope="function")
 def verify_auth_service(
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow_factory: Callable[[], SAAuthUnitOfWork],
     fake_hasher: PasswordHasher,
 ) -> AuthService:
     """Get authentication service instance."""
@@ -69,7 +66,7 @@ def verify_auth_service(
 
 @pytest.fixture(scope="function")
 def verify_user_service(
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow_factory: Callable[[], SAAuthUnitOfWork],
 ) -> UserService:
     """Get user service instance."""
     return UserService(uow=uow_factory())

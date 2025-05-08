@@ -7,10 +7,10 @@ from typing import Callable
 import pytest
 from faker import Faker
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import RoleCreate, RoleUpdate
 from project.app_org.application.services.role import RoleService
 from project.app_org.domain.models import Role
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -38,7 +38,7 @@ async def test_create(
 async def test_get_by_id(
     verify_role_service: RoleService,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving the existing role by its ID."""
     alter_role_service = RoleService(uow_sess_factory())
@@ -55,7 +55,7 @@ async def test_get_by_id(
 async def test_get_by_id_with_users(
     verify_role_service: RoleService,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving the existing role by its ID. With related users."""
     alter_role_service = RoleService(uow_sess_factory())
@@ -89,7 +89,7 @@ async def test_get_all(
 async def test_update(
     verify_role_service: RoleService,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
     fake_instance: Faker,
 ) -> None:
     """Test updating the existing role."""
@@ -119,7 +119,7 @@ async def test_update(
 async def test_deactivate_activate(
     verify_role_service: RoleService,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test deactivating the existing role and then activating it."""
     alter_role_service = RoleService(uow=uow_sess_factory())

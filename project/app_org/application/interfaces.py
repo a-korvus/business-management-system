@@ -2,13 +2,8 @@
 
 import abc
 import uuid
-from types import TracebackType
-from typing import Self, Sequence, TypeVar
 
 from project.app_org.domain.models import Command, Department, News, Role
-from project.core.db.base import Base
-
-ModelType = TypeVar("ModelType", bound=Base)
 
 
 class AbsCommandRepository(abc.ABC):
@@ -131,45 +126,4 @@ class AbsNewsRepository(abc.ABC):
     @abc.abstractmethod
     async def add(self, news: News) -> None:
         """Add News object to session."""
-        raise NotImplementedError
-
-
-class AbsUnitOfWork(abc.ABC):
-    """Interface for implementing app-specific authentication actions."""
-
-    commands: AbsCommandRepository
-    departments: AbsDepartmentRepository
-    roles: AbsRoleRepository
-    news: AbsNewsRepository
-
-    async def __aenter__(self) -> Self:
-        """Enter to async context manager."""
-        raise NotImplementedError
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Exit from async context manager."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def commit(self) -> None:
-        """Commit changes within a session."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def refresh(
-        self,
-        instance: ModelType,
-        attribute_names: Sequence[str] | None = None,
-    ) -> None:
-        """Refresh the given instance from the database."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def rollback(self) -> None:
-        """Rollback changes within a session."""
         raise NotImplementedError

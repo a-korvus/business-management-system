@@ -8,7 +8,6 @@ from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project.app_org.application.enums import RoleType
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import (
     CommandCreate,
     DepartmentCreate,
@@ -27,14 +26,14 @@ logger = get_logger(__name__)
 
 
 @pytest.fixture(scope="function")
-def uow_sess_factory() -> Callable[[], AbsUnitOfWork]:
+def uow_sess_factory() -> Callable[[], SAOrgUnitOfWork]:
     """Factory to create UoW instance with project session factory."""
     logger.debug(
         "uow_factory created with session factory: '%d'",
         id(AsyncSessionFactory),
     )
 
-    def _create_uow_session_factory() -> AbsUnitOfWork:
+    def _create_uow_session_factory() -> SAOrgUnitOfWork:
         logger.debug(
             "New UoW created with session factory: '%d'",
             id(AsyncSessionFactory),
@@ -47,11 +46,11 @@ def uow_sess_factory() -> Callable[[], AbsUnitOfWork]:
 @pytest.fixture(scope="function")
 def uow_factory(
     db_session: AsyncSession,
-) -> Callable[[], AbsUnitOfWork]:
+) -> Callable[[], SAOrgUnitOfWork]:
     """Factory to create UoW instances using the same test session."""
     logger.debug("uow_factory created with db_session: '%d'", id(db_session))
 
-    def _create_uow() -> AbsUnitOfWork:
+    def _create_uow() -> SAOrgUnitOfWork:
         logger.debug("New UoW created with db_session: '%d'", id(db_session))
         return SAOrgUnitOfWork(session=db_session)
 
@@ -60,7 +59,7 @@ def uow_factory(
 
 @pytest.fixture(scope="function")
 def verify_command_service(
-    uow_factory: Callable[[], AbsUnitOfWork],
+    uow_factory: Callable[[], SAOrgUnitOfWork],
 ) -> CommandService:
     """Get command service instance."""
     return CommandService(uow_factory())
@@ -68,7 +67,7 @@ def verify_command_service(
 
 @pytest.fixture(scope="function")
 def verify_department_service(
-    uow_factory: Callable[[], AbsUnitOfWork],
+    uow_factory: Callable[[], SAOrgUnitOfWork],
 ) -> DepartmentService:
     """Get department service instance."""
     return DepartmentService(uow_factory())
@@ -76,7 +75,7 @@ def verify_department_service(
 
 @pytest.fixture(scope="function")
 def verify_role_service(
-    uow_factory: Callable[[], AbsUnitOfWork],
+    uow_factory: Callable[[], SAOrgUnitOfWork],
 ) -> RoleService:
     """Get role service instance."""
     return RoleService(uow_factory())
@@ -84,7 +83,7 @@ def verify_role_service(
 
 @pytest.fixture(scope="function")
 def verify_news_service(
-    uow_factory: Callable[[], AbsUnitOfWork],
+    uow_factory: Callable[[], SAOrgUnitOfWork],
 ) -> NewsService:
     """Get news service instance."""
     return NewsService(uow_factory())

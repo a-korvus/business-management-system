@@ -5,10 +5,7 @@ from typing import Callable
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import (
     LoginSchema,
     Token,
@@ -17,6 +14,7 @@ from project.app_auth.application.schemas import (
 )
 from project.app_auth.application.services.auth import AuthService
 from project.app_auth.domain.models import Profile, User
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 
 
 def test_true() -> None:
@@ -28,7 +26,7 @@ def test_true() -> None:
 @pytest.mark.anyio
 async def test_register_user(
     verify_auth_service: AuthService,
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow_factory: Callable[[], SAAuthUnitOfWork],
     fake_user_schema: UserCreate,
     fake_hasher: PasswordHasher,
 ) -> None:

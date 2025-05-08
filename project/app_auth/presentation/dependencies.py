@@ -6,10 +6,7 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import TokenData
 from project.app_auth.application.security import decode_access_token
 from project.app_auth.application.services.auth import AuthService
@@ -31,14 +28,14 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-def get_uow() -> AbstractUnitOfWork:
+def get_uow() -> SAAuthUnitOfWork:
     """Get Unit of Work instance."""
     # фабрику сессий получаем в конструкторе класса по умолчанию
     return SAAuthUnitOfWork(session_factory=AsyncSessionFactory)
 
 
 def get_auth_service(
-    uow: Annotated[AbstractUnitOfWork, Depends(get_uow)],
+    uow: Annotated[SAAuthUnitOfWork, Depends(get_uow)],
     hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
 ) -> AuthService:
     """Get authentication service instance."""
@@ -46,7 +43,7 @@ def get_auth_service(
 
 
 def get_user_service(
-    uow: Annotated[AbstractUnitOfWork, Depends(get_uow)],
+    uow: Annotated[SAAuthUnitOfWork, Depends(get_uow)],
 ) -> UserService:
     """Get user service instance."""
     return UserService(uow=uow)

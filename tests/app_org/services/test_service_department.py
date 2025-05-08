@@ -7,7 +7,6 @@ from typing import Callable
 import pytest
 from faker import Faker
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import (
     DepartmentCreate,
     DepartmentUpdate,
@@ -16,6 +15,7 @@ from project.app_org.application.schemas import (
 from project.app_org.application.services.department import DepartmentService
 from project.app_org.application.services.role import RoleService
 from project.app_org.domain.models import Department, Role
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -101,7 +101,7 @@ async def test_get_all(
 async def test_update(
     verify_department_service: DepartmentService,
     fake_department_schema: DepartmentCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
     fake_instance: Faker,
 ) -> None:
     """Test updating the existing department."""
@@ -135,7 +135,7 @@ async def test_add_exclude_role(
     verify_role_service: RoleService,
     fake_department_schema: DepartmentCreate,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test adding a role to a department and exclusion from."""
     # создать департамент
@@ -191,7 +191,7 @@ async def test_list_roles(
     verify_role_service: RoleService,
     fake_department_schema: DepartmentCreate,
     fake_role_schema: RoleCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving all department-related roles."""
     department = await verify_department_service.create(fake_department_schema)
@@ -219,7 +219,7 @@ async def test_list_roles(
 async def test_deactivate_activate(
     verify_department_service: DepartmentService,
     fake_department_schema: DepartmentCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test deactivating the existing department and then activating it."""
     alter_department_service = DepartmentService(uow=uow_sess_factory())

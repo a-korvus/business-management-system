@@ -7,7 +7,6 @@ from typing import Callable
 import pytest
 from faker import Faker
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import (
     CommandCreate,
     CommandUpdate,
@@ -17,6 +16,7 @@ from project.app_org.application.services.command import CommandService
 from project.app_org.application.services.department import DepartmentService
 from project.app_org.domain.exceptions import CommandNameExistsError
 from project.app_org.domain.models import Command, Department
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -116,7 +116,7 @@ async def test_get_all(
 async def test_update(
     verify_command_service: CommandService,
     fake_command_schema: CommandCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
     fake_instance: Faker,
 ) -> None:
     """Test updating the existing command."""
@@ -145,7 +145,7 @@ async def test_add_exclude_department(
     verify_department_service: DepartmentService,
     fake_command_schema: CommandCreate,
     fake_department_schema: DepartmentCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test adding a department to a command and exclusion from."""
     # создать команду
@@ -201,7 +201,7 @@ async def test_list_departments(
     verify_department_service: DepartmentService,
     fake_command_schema: CommandCreate,
     fake_department_schema: DepartmentCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving all command-related departments."""
     command = await verify_command_service.create(fake_command_schema)
@@ -229,7 +229,7 @@ async def test_list_departments(
 async def test_deactivate_activate(
     verify_command_service: CommandService,
     fake_command_schema: CommandCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test deactivating the existing command and then activating it."""
     alter_command_service = CommandService(uow=uow_sess_factory())

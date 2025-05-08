@@ -2,10 +2,7 @@
 
 import uuid
 
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    PasswordHasher,
-)
+from project.app_auth.application.interfaces import PasswordHasher
 from project.app_auth.application.schemas import (
     LoginSchema,
     ProfileUpdate,
@@ -17,6 +14,7 @@ from project.app_auth.domain.exceptions import (
 )
 from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import get_password_hasher
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -25,7 +23,7 @@ logger = get_logger(__name__)
 class UserService:
     """Application service for managing users."""
 
-    def __init__(self, uow: AbstractUnitOfWork) -> None:
+    def __init__(self, uow: SAAuthUnitOfWork) -> None:
         """Initialize the service object. Set UoW."""
         self.uow = uow
 

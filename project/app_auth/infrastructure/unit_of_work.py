@@ -1,102 +1,20 @@
 """Unit of work actions in the 'app_auth' app."""
 
-import types
-from typing import Self, Sequence
+from typing import Self
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
-from project.app_auth.application.interfaces import (
-    AbstractUnitOfWork,
-    ModelType,
-)
 from project.app_auth.infrastructure.repositories import SAUserRepository
+from project.core.unit_of_work import BaseSAUnitOfWork
 
 
-class SAAuthUnitOfWork(AbstractUnitOfWork):
-    """Unit of work implementation using SQLAlchemy."""
+class SAAuthUnitOfWork(BaseSAUnitOfWork):
+    """Unit of work implementation. Applicable to the 'app_auth'."""
 
-    def __init__(
-        self,
-        session_factory: async_sessionmaker[AsyncSession] | None = None,
-        session: AsyncSession | None = None,
-    ) -> None:
-        """Initialize the unit of work."""
-        if not any((session_factory, session)):
-            raise ValueError(f"{self.__class__.__name__} has not session!")
-
-        if all((session_factory, session)):
-            raise ValueError(
-                f"{self.__class__.__name__} must have either a "
-                "'session_factory' or a 'session', not both!"
-            )
-
-        self._session_factory = session_factory
-        self._external_session = session
-
-        self._session: AsyncSession | None = session
+    users: SAUserRepository
 
     async def __aenter__(self) -> Self:
-        """Enter to context manager. Create a session and repositories."""
-        if self._session_factory:
-            self._session = self._session_factory()
+        """Create a session in the parent object. Initialize repositories."""
+        await super().__aenter__()
 
         self.users = SAUserRepository(self._session)
 
         return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: types.TracebackType | None,
-    ) -> None:
-        """Exit from context manager.
-
-        Rollback if error occurs. Close session anyway.
-        """
-        if not self._session:
-            return
-
-        try:
-            if exc_type:
-                await self.rollback()
-        finally:
-            if self._session_factory:
-                await self._session.close()
-                self._session = None
-
-    async def commit(self) -> None:
-        """Commit the current transaction."""
-        if not self._session:
-            raise RuntimeError("Session is not active for commit.")
-
-        try:
-            await self._session.commit()
-        except Exception:  # noqa
-            await self.rollback()
-            raise
-
-    async def refresh(
-        self,
-        instance: ModelType,
-        attribute_names: Sequence[str] | None = None,
-    ) -> None:
-        """Refresh the given instance from the database."""
-        if not self._session:
-            raise RuntimeError("Session is not active for refresh.")
-
-        try:
-            await self._session.refresh(
-                instance,
-                attribute_names=attribute_names,
-            )
-        except Exception:  # noqa
-            await self.rollback()
-            raise
-
-    async def rollback(self) -> None:
-        """Rollback the current transaction."""
-        if not self._session:
-            raise RuntimeError("Session is not active for rollback.")
-
-        await self._session.rollback()

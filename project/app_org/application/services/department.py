@@ -2,7 +2,6 @@
 
 import uuid
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import (
     DepartmentCreate,
     DepartmentUpdate,
@@ -14,6 +13,7 @@ from project.app_org.domain.exceptions import (
     RoleNotFound,
 )
 from project.app_org.domain.models import Department, Role
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.db.utils import exists_relationships
 from project.core.log_config import get_logger
 
@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 class DepartmentService:
     """Application service for managing departments."""
 
-    def __init__(self, uow: AbsUnitOfWork) -> None:
+    def __init__(self, uow: SAOrgUnitOfWork) -> None:
         """Initialize the service object. Set UoW."""
         self.uow = uow
         logger.debug("'%s' initialized", self.__class__.__name__)

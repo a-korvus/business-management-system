@@ -6,9 +6,9 @@ from typing import Callable
 import pytest
 from httpx import AsyncClient, Response
 
-from project.app_auth.application.interfaces import AbstractUnitOfWork
 from project.app_auth.application.schemas import UserCreate
 from project.app_auth.domain.models import User
+from project.app_auth.infrastructure.unit_of_work import SAAuthUnitOfWork
 from project.config import settings
 from project.core.log_config import get_logger
 
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.anyio
 @pytest.mark.usefixtures("truncate_tables")
 async def test_register(
     httpx_test_client: AsyncClient,
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow_factory: Callable[[], SAAuthUnitOfWork],
     fake_user_schema: UserCreate,
 ) -> None:
     """Test register new user route."""

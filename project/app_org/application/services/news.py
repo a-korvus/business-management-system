@@ -2,10 +2,10 @@
 
 import uuid
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import NewsCreate, NewsUpdate
 from project.app_org.domain.exceptions import NewsNotFound
 from project.app_org.domain.models import News
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class NewsService:
     """Application service for managing news."""
 
-    def __init__(self, uow: AbsUnitOfWork) -> None:
+    def __init__(self, uow: SAOrgUnitOfWork) -> None:
         """Initialize the service object. Set UoW."""
         self.uow = uow
         logger.debug("'%s' initialized", self.__class__.__name__)

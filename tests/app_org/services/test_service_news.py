@@ -6,10 +6,10 @@ from typing import Callable
 import pytest
 from faker import Faker
 
-from project.app_org.application.interfaces import AbsUnitOfWork
 from project.app_org.application.schemas import NewsCreate, NewsUpdate
 from project.app_org.application.services.news import NewsService
 from project.app_org.domain.models import News
+from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ async def test_create(
 async def test_get_by_id(
     verify_news_service: NewsService,
     fake_news_schema: NewsCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving the existing post instance."""
     alter_news_service = NewsService(uow=uow_sess_factory())
@@ -49,7 +49,7 @@ async def test_get_by_id(
 async def test_get_all(
     verify_news_service: NewsService,
     fake_news_schema: NewsCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test retrieving all existing post instance."""
     post_count = 0
@@ -67,7 +67,7 @@ async def test_get_all(
 async def test_update(
     verify_news_service: NewsService,
     fake_news_schema: NewsCreate,
-    uow_sess_factory: Callable[[], AbsUnitOfWork],
+    uow_sess_factory: Callable[[], SAOrgUnitOfWork],
     fake_instance: Faker,
 ) -> None:
     """Test updating the existing post."""
