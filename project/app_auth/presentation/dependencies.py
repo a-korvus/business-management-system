@@ -122,6 +122,8 @@ async def get_admin(
             raise CredentialException(
                 detail="Could not validate credentials (user inactive)"
             )
+        elif user.role != RoleType.ADMINISTRATOR and not user.command:
+            raise AccessRightsError()
         elif (
             user.role != RoleType.ADMINISTRATOR
             and user.command.name != settings.MASTER_COMMAND_NAME
