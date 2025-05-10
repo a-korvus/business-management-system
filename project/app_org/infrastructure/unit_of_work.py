@@ -1,4 +1,4 @@
-"""Unit of work actions in the 'app_org' app."""
+"""Unit of work implementation for the 'app_org' app."""
 
 from typing import Self
 

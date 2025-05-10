@@ -1,4 +1,4 @@
-"""Infrastructure interfaces in the 'app_org' app."""
+"""Infrastructure interfaces in the 'app_org'."""
 
 import abc
 import uuid

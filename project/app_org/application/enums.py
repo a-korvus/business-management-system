@@ -1,4 +1,4 @@
-"""Enumerates classes in the 'app_org' app."""
+"""Enumerates classes in the 'app_org'."""
 
 import enum
 
