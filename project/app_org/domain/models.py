@@ -50,7 +50,7 @@ class Command(Base):
         onupdate=func.now(),
     )
 
-    users: Mapped[list[Department]] = relationship(
+    users: Mapped[list[User]] = relationship(
         "User",
         back_populates="command",
         cascade="save-update, merge",
@@ -110,7 +110,7 @@ class Department(Base):
         default=None,
     )
 
-    command: Mapped[Command] = relationship(
+    command: Mapped[Command | None] = relationship(
         back_populates="departments",
     )
     roles: Mapped[list[Role]] = relationship(
@@ -178,10 +178,10 @@ class Role(Base):
         default=None,
     )
 
-    command: Mapped[Command] = relationship(
+    command: Mapped[Command | None] = relationship(
         back_populates="roles",
     )
-    department: Mapped[Department] = relationship(
+    department: Mapped[Department | None] = relationship(
         back_populates="roles",
     )
     users: Mapped[list[User]] = relationship(
