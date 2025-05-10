@@ -73,11 +73,7 @@ class Task(Base):
         default=uuid.uuid4,
         index=True,
     )
-    title: Mapped[str] = mapped_column(
-        String(500),
-        unique=True,
-        nullable=False,
-    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(
         String(),
         nullable=True,
@@ -125,6 +121,7 @@ class Task(Base):
         ),
         nullable=False,
     )
+
     creator: Mapped[Partner] = relationship(
         "Partner",
         back_populates="tasks_created",
@@ -135,7 +132,6 @@ class Task(Base):
         back_populates="tasks_assigned",
         foreign_keys=[assignee_id],
     )
-
     comments: Mapped[list[TaskComment]] = relationship(
         "TaskComment",
         back_populates="task",
