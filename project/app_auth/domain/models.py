@@ -17,6 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from project.app_org.domain.models import Command, Role
+from project.app_team.domain.models import Partner
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
@@ -24,7 +25,10 @@ if TYPE_CHECKING:
 
 
 class User(Base):
-    """Main User in project. Each user can have only one profile."""
+    """Main User in project.
+
+    Each user can have only one profile and can be only one partner.
+    """
 
     __tablename__ = "users"
 
@@ -74,11 +78,17 @@ class User(Base):
         uselist=False,
         lazy="joined",
     )
-    role: Mapped[Role] = relationship(
+    partner: Mapped[Partner] = relationship(
+        "Partner",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    role: Mapped[Role | None] = relationship(
         back_populates="users",
         cascade="save-update, merge",
     )
-    command: Mapped[Command] = relationship(
+    command: Mapped[Command | None] = relationship(
         back_populates="users",
         cascade="save-update, merge",
     )
@@ -92,8 +102,7 @@ class User(Base):
         """Initialize the user.
 
         Handles standard attribute assignments via super(), then performs
-        custom logic for email validation, password hashing,
-        and profile creation.
+        custom logic for password hashing and one-to-one instances creation.
         """
         super().__init__(**kwargs)
 
@@ -101,6 +110,9 @@ class User(Base):
 
         if not hasattr(self, "profile") or self.profile is None:
             self.profile = Profile()
+
+        if not hasattr(self, "partner") or self.partner is None:
+            self.partner = Partner()
 
     def set_password(
         self,

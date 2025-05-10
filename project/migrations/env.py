@@ -16,6 +16,7 @@ from project.app_org.domain.models import (  # noqa
     News,
     Role,
 )
+from project.app_team.domain.models import Partner, Task, TaskComment  # noqa
 from project.config import settings
 from project.core.db.base import Base
 
