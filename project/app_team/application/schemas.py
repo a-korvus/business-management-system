@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from project.app_team.application.enums import TaskGrade, TaskStatus
 
@@ -23,6 +23,15 @@ class TaskCreate(TaskBase):
     due_date: datetime
     creator_id: uuid.UUID
     assignee_id: uuid.UUID
+
+    @field_validator("due_date", mode="after")
+    @classmethod
+    def sure_future_date(cls, value: datetime) -> datetime:
+        """Make sure that the due date is not in the past."""
+        if value.date() < date.today():
+            raise ValueError("Due date must be in the future.")
+
+        return value
 
 
 class TaskUpdate(TaskBase):

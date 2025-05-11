@@ -19,49 +19,6 @@ if TYPE_CHECKING:
     from project.app_auth.domain.models import User
 
 
-class Partner(Base):
-    """An entity associated with a user to represent them in a team."""
-
-    __tablename__ = "partners"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID_SQL(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        index=True,
-    )
-
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="RESTRICT",
-            name="fk_partners_user_id",
-        ),
-        unique=True,
-        index=True,
-    )
-
-    user: Mapped[User] = relationship(
-        back_populates="partner",
-        lazy="joined",
-    )
-    tasks_created: Mapped[list[Task]] = relationship(
-        "Task",
-        back_populates="creator",
-        foreign_keys="[Task.creator_id]",
-    )
-    tasks_assigned: Mapped[list[Task]] = relationship(
-        "Task",
-        back_populates="assignee",
-        foreign_keys="[Task.assignee_id]",
-    )
-
-    task_comments: Mapped[list[TaskComment]] = relationship(
-        "TaskComment",
-        back_populates="commentator",
-    )
-
-
 class Task(Base):
     """Task entity."""
 
@@ -107,28 +64,28 @@ class Task(Base):
 
     creator_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "partners.id",
+            "users.id",
             ondelete="RESTRICT",
-            name="fk_tasks_creator_partner_id",
+            name="fk_tasks_creator_user_id",
         ),
         nullable=False,
     )
     assignee_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey(
-            "partners.id",
+            "users.id",
             ondelete="RESTRICT",
-            name="fk_tasks_assignee_partner_id",
+            name="fk_tasks_assignee_user_id",
         ),
         nullable=False,
     )
 
-    creator: Mapped[Partner] = relationship(
-        "Partner",
+    creator: Mapped[User] = relationship(
+        "User",
         back_populates="tasks_created",
         foreign_keys=[creator_id],
     )
-    assignee: Mapped[Partner] = relationship(
-        "Partner",
+    assignee: Mapped[User] = relationship(
+        "User",
         back_populates="tasks_assigned",
         foreign_keys=[assignee_id],
     )
@@ -174,7 +131,7 @@ class TaskComment(Base):
     )
     commentator_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
-            "partners.id",
+            "users.id",
             ondelete="SET NULL",
             name="fk_taskcomments_commentator_id",
         ),
@@ -194,8 +151,8 @@ class TaskComment(Base):
         "Task",
         back_populates="comments",
     )
-    commentator: Mapped[Partner] = relationship(
-        "Partner",
+    commentator: Mapped[User] = relationship(
+        "User",
         back_populates="task_comments",
     )
 

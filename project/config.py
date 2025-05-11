@@ -143,6 +143,7 @@ class ProjectSettings(BaseSettings):
     MASTER_EMAIL: str = ""
     MASTER_PASSWORD: str = ""
     PREFIX_ORG: str = "/org"
+    PREFIX_TEAM: str = "/team"
 
     # вложенные конфиги
     DB: PGConfig = PGConfig()

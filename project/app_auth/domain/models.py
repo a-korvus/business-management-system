@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from project.app_org.domain.models import Command, Role
-from project.app_team.domain.models import Partner
+from project.app_team.domain.models import Task, TaskComment
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
@@ -78,12 +78,6 @@ class User(Base):
         uselist=False,
         lazy="joined",
     )
-    partner: Mapped[Partner] = relationship(
-        "Partner",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        uselist=False,
-    )
     role: Mapped[Role | None] = relationship(
         back_populates="users",
         cascade="save-update, merge",
@@ -91,6 +85,22 @@ class User(Base):
     command: Mapped[Command | None] = relationship(
         back_populates="users",
         cascade="save-update, merge",
+    )
+
+    tasks_created: Mapped[list[Task]] = relationship(
+        "Task",
+        back_populates="creator",
+        foreign_keys="[Task.creator_id]",
+    )
+    tasks_assigned: Mapped[list[Task]] = relationship(
+        "Task",
+        back_populates="assignee",
+        foreign_keys="[Task.assignee_id]",
+    )
+
+    task_comments: Mapped[list[TaskComment]] = relationship(
+        "TaskComment",
+        back_populates="commentator",
     )
 
     def __init__(
@@ -110,9 +120,6 @@ class User(Base):
 
         if not hasattr(self, "profile") or self.profile is None:
             self.profile = Profile()
-
-        if not hasattr(self, "partner") or self.partner is None:
-            self.partner = Partner()
 
     def set_password(
         self,
