@@ -7,16 +7,51 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 from sqlalchemy import UUID as UUID_SQL
-from sqlalchemy import Boolean, DateTime
+from sqlalchemy import Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey, String, func
+from sqlalchemy import ForeignKey, String, Table, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from project.app_team.application.enums import TaskGrade, TaskStatus
+from project.app_team.application.enums import (
+    EventType,
+    MeetingStatus,
+    TaskGrade,
+    TaskStatus,
+)
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
     from project.app_auth.domain.models import User
+    from project.app_org.domain.models import Command
+
+
+meeting_members_table = Table(
+    "meeting_users",
+    Base.metadata,
+    Column(
+        "user_id",
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "meeting_id",
+        ForeignKey("meetings.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+users_calendar_events_table = Table(
+    "users_calendar_events",
+    Base.metadata,
+    Column(
+        "user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "calendar_event_id",
+        ForeignKey("calendar_events.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
 
 
 class Task(Base):
@@ -78,6 +113,15 @@ class Task(Base):
         ),
         nullable=False,
     )
+    calendar_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "calendar_events.id",
+            ondelete="SET NULL",
+            name="fk_tasks_calendar_event_id",
+        ),
+        default=None,
+        nullable=True,
+    )
 
     creator: Mapped[User] = relationship(
         "User",
@@ -92,6 +136,10 @@ class Task(Base):
     comments: Mapped[list[TaskComment]] = relationship(
         "TaskComment",
         back_populates="task",
+    )
+    calendar_event: Mapped[CalendarEvent | None] = relationship(
+        "CalendarEvent",
+        back_populates="related_task",
     )
 
 
@@ -168,4 +216,143 @@ class TaskComment(Base):
     child_comments: Mapped[list[Self]] = relationship(
         "TaskComment",
         back_populates="parent_comment",
+    )
+
+
+class Meeting(Base):
+    """Team meeting entity."""
+
+    __tablename__ = "meetings"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID_SQL(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
+    topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str] = mapped_column(
+        String(),
+        nullable=True,
+        default=None,
+    )
+    status: Mapped[MeetingStatus] = mapped_column(
+        SQLEnum(MeetingStatus),
+        default=MeetingStatus.PLANNED,
+        nullable=False,
+    )
+    start_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    end_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    creator_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="SET NULL",
+            name="fk_meetings_creator_user_id",
+        ),
+        nullable=True,
+    )
+    command_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey(
+            "commands.id",
+            ondelete="RESTRICT",
+            name="fk_meetings_command_id",
+        ),
+        nullable=False,
+    )
+    calendar_event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey(
+            "calendar_events.id",
+            ondelete="RESTRICT",
+            name="fk_meetings_calendar_event_id",
+        ),
+        nullable=False,
+    )
+
+    creator: Mapped[User] = relationship(
+        "User",
+        back_populates="meetengs_created",
+    )
+    command: Mapped[Command] = relationship(
+        "Command",
+        back_populates="meetings",
+    )
+    members: Mapped[list[User]] = relationship(
+        "User",
+        secondary=meeting_members_table,
+        back_populates="meetings_memberships",
+        lazy="selectin",
+    )
+    calendar_event: Mapped[CalendarEvent] = relationship(
+        "CalendarEvent",
+        back_populates="related_meeting",
+        lazy="joined",
+    )
+
+
+class CalendarEvent(Base):
+    """Team event entity."""
+
+    __tablename__ = "calendar_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID_SQL(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str] = mapped_column(
+        String(),
+        nullable=True,
+        default=None,
+    )
+    start_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    end_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[EventType] = mapped_column(
+        SQLEnum(EventType),
+        default=EventType.GENERAL,
+        nullable=False,
+    )
+    all_day: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    users: Mapped[list[User]] = relationship(
+        "User",
+        secondary=users_calendar_events_table,
+        back_populates="calendar_events",
+    )
+
+    related_task: Mapped[Task | None] = relationship(
+        "Task",
+        back_populates="calendar_event",
+    )
+    related_meeting: Mapped[Meeting | None] = relationship(
+        "Meeting",
+        back_populates="calendar_event",
     )

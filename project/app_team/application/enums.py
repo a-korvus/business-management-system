@@ -25,3 +25,21 @@ class TaskGrade(enum.IntEnum):
     def get_values(cls) -> list[int]:
         """Get all grades."""
         return [grade.value for grade in cls]
+
+
+@enum.unique
+class MeetingStatus(enum.StrEnum):
+    """Meeting status values."""
+
+    PLANNED = "planned"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+@enum.unique
+class EventType(enum.StrEnum):
+    """Event type values."""
+
+    TASK = "task"
+    MEETING = "meeting"
+    GENERAL = "general"

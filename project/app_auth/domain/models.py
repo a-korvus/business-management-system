@@ -17,7 +17,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from project.app_org.domain.models import Command, Role
-from project.app_team.domain.models import Task, TaskComment
+from project.app_team.domain.models import (
+    CalendarEvent,
+    Meeting,
+    Task,
+    TaskComment,
+    meeting_members_table,
+    users_calendar_events_table,
+)
 from project.core.db.base import Base
 
 if TYPE_CHECKING:
@@ -86,7 +93,6 @@ class User(Base):
         back_populates="users",
         cascade="save-update, merge",
     )
-
     tasks_created: Mapped[list[Task]] = relationship(
         "Task",
         back_populates="creator",
@@ -97,10 +103,24 @@ class User(Base):
         back_populates="assignee",
         foreign_keys="[Task.assignee_id]",
     )
-
     task_comments: Mapped[list[TaskComment]] = relationship(
         "TaskComment",
         back_populates="commentator",
+    )
+    meetengs_created: Mapped[list[Meeting]] = relationship(
+        "Meeting",
+        back_populates="creator",
+    )
+    meetings_memberships: Mapped[list[Meeting]] = relationship(
+        "Meeting",
+        secondary=meeting_members_table,
+        back_populates="members",
+        lazy="selectin",
+    )
+    calendar_events: Mapped[list[CalendarEvent]] = relationship(
+        "CalendarEvent",
+        secondary=users_calendar_events_table,
+        back_populates="users",
     )
 
     def __init__(

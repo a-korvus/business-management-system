@@ -17,6 +17,7 @@ from project.core.db.base import Base
 
 if TYPE_CHECKING:
     from project.app_auth.domain.models import User
+    from project.app_team.domain.models import Meeting
 
 
 class Command(Base):
@@ -62,6 +63,11 @@ class Command(Base):
     )
     departments: Mapped[list[Department]] = relationship(
         "Department",
+        back_populates="command",
+        cascade="save-update, merge",
+    )
+    meetings: Mapped[list[Meeting]] = relationship(
+        "Meeting",
         back_populates="command",
         cascade="save-update, merge",
     )

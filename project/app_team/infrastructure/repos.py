@@ -213,7 +213,7 @@ class SATaskCommentRepo(AbsTaskCommentRepo):
         """Get TaskComment by its ID with all child comments."""
         result = await self._session.execute(
             select(TaskComment)
-            .options(selectinload(TaskComment.child_comments))
+            .options(selectinload(TaskComment.child_comments))  # type: ignore
             .where(TaskComment.id == taskcomment_id)
         )
         return result.scalar_one_or_none()
