@@ -20,3 +20,8 @@ class TaskGrade(enum.IntEnum):
     DONE_DEADLINE_OUT = 1
     DONE_DEADLINE = 2
     DONE_INITIATIVE = 3
+
+    @classmethod
+    def get_values(cls) -> list[int]:
+        """Get all grades."""
+        return [grade.value for grade in cls]

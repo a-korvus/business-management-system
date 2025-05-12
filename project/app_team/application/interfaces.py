@@ -2,6 +2,8 @@
 
 import abc
 import uuid
+from datetime import date, datetime
+from decimal import Decimal
 
 from project.app_auth.domain.models import User
 from project.app_team.domain.models import Task, TaskComment
@@ -13,6 +15,14 @@ class AbsPartnerRepo(abc.ABC):
     @abc.abstractmethod
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         """Get User by ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_command_by_user_id(
+        self,
+        user_id: uuid.UUID,
+    ) -> uuid.UUID | None:
+        """Get command ID of user by user ID."""
         raise NotImplementedError
 
 
@@ -27,6 +37,49 @@ class AbsTaskRepo(abc.ABC):
     @abc.abstractmethod
     async def get_by_id_comments(self, task_id: uuid.UUID) -> Task | None:
         """Get Task by its ID with all related comments."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_assigned_period(
+        self,
+        assignee_id: uuid.UUID,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[Task]:
+        """Get all tasks assigned to a user for a specified period."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_grades_assigned_period(
+        self,
+        assignee_id: uuid.UUID,
+        start_date: date,
+        end_date: date,
+    ) -> list[tuple[str, int]]:
+        """Get task titles and grades assigned to a user.
+
+        For a specified period.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_avg_grade_period(
+        self,
+        assignee_id: uuid.UUID,
+        start_date: date,
+        end_date: date,
+    ) -> Decimal | None:
+        """Get average grade of user tasks for a specified period."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_avg_grade_period_command(
+        self,
+        command_id: uuid.UUID,
+        start_date: date,
+        end_date: date,
+    ) -> Decimal | None:
+        """Get average grade of command for a specified period."""
         raise NotImplementedError
 
     @abc.abstractmethod

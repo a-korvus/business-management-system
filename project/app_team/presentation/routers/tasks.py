@@ -4,12 +4,16 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import ORJSONResponse
 
+from project.app_auth.application.schemas import TokenData
 from project.app_auth.domain.exceptions import UserNotFound
+from project.app_auth.presentation.dependencies import get_current_user_data
 from project.app_team.application.schemas import (
     TaskCommentCreate,
     TaskCommentRead,
     TaskCreate,
+    TaskPeriod,
     TaskRead,
     TaskUpdate,
 )
@@ -142,3 +146,109 @@ async def create_comment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected error occurred while creating a comment.",
         )
+
+
+@router.get(
+    path="/me/",
+    response_model=list[TaskRead],
+    status_code=status.HTTP_200_OK,
+)
+async def assigned_tasks(
+    period_schema: Annotated[TaskPeriod, Depends()],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+) -> list[Task]:
+    """Get tasks assigned to a user for a period."""
+    try:
+        return await task_service.get_assigned_tasks(
+            assignee_id=uuid.UUID(token_data.uid),
+            period=period_schema,
+        )
+    except Exception as e:  # noqa
+        logger.exception("Unexpected error while receiving assigned task.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error occurred while receiving assigned task.",
+        )
+
+
+@router.get(
+    path="/me/grades/",
+    status_code=status.HTTP_200_OK,
+)
+async def grades_assigned_tasks(
+    period_schema: Annotated[TaskPeriod, Depends()],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+) -> list[tuple[str, int]]:
+    """Get user tasks grades for a period.
+
+    Tasks without a grade are not displayed.
+    """
+    try:
+        return await task_service.get_grades_assigned_tasks(
+            assignee_id=uuid.UUID(token_data.uid),
+            period=period_schema,
+        )
+    except Exception as e:  # noqa
+        logger.exception("Unexpected error while receiving user grades.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error occurred while receiving user grades.",
+        )
+
+
+@router.get(
+    path="/me/grades/avg/",
+    status_code=status.HTTP_200_OK,
+)
+async def avg_grade_period(
+    period_schema: Annotated[TaskPeriod, Depends()],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+) -> ORJSONResponse:
+    """Get average user grade for a specified period."""
+    try:
+        avg_grade = await task_service.get_avg_grade_period(
+            assignee_id=uuid.UUID(token_data.uid),
+            period=period_schema,
+        )
+    except Exception as e:  # noqa
+        logger.exception("Unexpected error while receiving user avg grade.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error occurred while receiving user avg grade.",
+        )
+
+    if not avg_grade:
+        return ORJSONResponse(content={"avg_grade": "no data"})
+    return ORJSONResponse(content={"avg_grade": str(avg_grade)})
+
+
+@router.get(
+    path="/me/grades/avg/command/",
+    status_code=status.HTTP_200_OK,
+)
+async def avg_grade_period_command(
+    period_schema: Annotated[TaskPeriod, Depends()],
+    task_service: Annotated[TaskService, Depends(get_task_service)],
+    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+) -> ORJSONResponse:
+    """Get average grade of user command for a specified period."""
+    try:
+        command_avg_grade = await task_service.get_avg_grade_period_command(
+            assignee_id=uuid.UUID(token_data.uid),
+            period=period_schema,
+        )
+    except Exception as e:  # noqa
+        logger.exception("Unexpected error while receiving command avg grade.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error while receiving command avg grade.",
+        )
+
+    if not command_avg_grade:
+        return ORJSONResponse(content={"command_avg_grade": "no data"})
+    return ORJSONResponse(
+        content={"command_avg_grade": str(command_avg_grade)}
+    )

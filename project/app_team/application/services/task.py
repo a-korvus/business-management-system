@@ -1,10 +1,15 @@
 """Task-related service in 'app_team'."""
 
 import uuid
+from decimal import Decimal
 from typing import Literal
 
 from project.app_auth.domain.exceptions import UserNotFound
-from project.app_team.application.schemas import TaskCreate, TaskUpdate
+from project.app_team.application.schemas import (
+    TaskCreate,
+    TaskPeriod,
+    TaskUpdate,
+)
 from project.app_team.domain.exceptions import TaskNotFound
 from project.app_team.domain.models import Task
 from project.app_team.infrastructure.unit_of_work import SATeamUnitOfWork
@@ -29,6 +34,81 @@ class TaskService:
                 raise TaskNotFound(task_id)
 
             return task
+
+    async def get_assigned_tasks(
+        self,
+        assignee_id: uuid.UUID,
+        period: TaskPeriod,
+    ) -> list[Task]:
+        """Get tasks assigned to a user for a period."""
+        async with self.uow as uow:
+            assignee = await uow.partners.get_by_id(assignee_id)
+            if not assignee:
+                raise UserNotFound(user_id=assignee_id)
+
+            return await uow.tasks.get_assigned_period(
+                assignee_id=assignee_id,
+                start_date=period.start,
+                end_date=period.end,
+            )
+
+    async def get_grades_assigned_tasks(
+        self,
+        assignee_id: uuid.UUID,
+        period: TaskPeriod,
+    ) -> list[tuple[str, int]]:
+        """Get task titles assigned to a user for a period and its grades.
+
+        Tasks without a grade will not be selected.
+        """
+        async with self.uow as uow:
+            assignee = await uow.partners.get_by_id(assignee_id)
+            if not assignee:
+                raise UserNotFound(user_id=assignee_id)
+
+            return await uow.tasks.get_grades_assigned_period(
+                assignee_id=assignee_id,
+                start_date=period.start,
+                end_date=period.end,
+            )
+
+    async def get_avg_grade_period(
+        self,
+        assignee_id: uuid.UUID,
+        period: TaskPeriod,
+    ) -> Decimal | None:
+        """Get average grade of user tasks for a specified period."""
+        async with self.uow as uow:
+            assignee = await uow.partners.get_by_id(assignee_id)
+            if not assignee:
+                raise UserNotFound(user_id=assignee_id)
+
+            return await uow.tasks.get_avg_grade_period(
+                assignee_id=assignee_id,
+                start_date=period.start,
+                end_date=period.end,
+            )
+
+    async def get_avg_grade_period_command(
+        self,
+        assignee_id: uuid.UUID,
+        period: TaskPeriod,
+    ) -> Decimal | None:
+        """Get average grade of user command for a specified period."""
+        async with self.uow as uow:
+            assignee = await uow.partners.get_by_id(assignee_id)
+            if not assignee:
+                raise UserNotFound(user_id=assignee_id)
+
+            command_id = await uow.partners.get_command_by_user_id(assignee_id)
+            if not command_id:
+                return None
+
+            return await uow.tasks.get_avg_grade_period_command(
+                command_id=command_id,
+                start_date=period.start,
+                end_date=period.end,
+            )
 
     async def create_assignment(self, data: TaskCreate) -> Task:
         """Create a task. Assing to user."""

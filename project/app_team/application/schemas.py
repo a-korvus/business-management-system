@@ -4,8 +4,15 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from project.app_team.application.enums import TaskGrade, TaskStatus
 
@@ -93,3 +100,19 @@ class TaskCommentRead(TaskCommentBase):
     parent_comment_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TaskPeriod(BaseModel):
+    """Scheme of checking the period boundaries."""
+
+    start: date = Field(..., description="Period start date (YYYY-MM-DD)")
+    end: date = Field(..., description="Period end date (YYYY-MM-DD)")
+
+    @model_validator(mode="after")
+    def check_dates_order(self) -> Self:
+        """Make sure the end date more or equal the start date."""
+        if self.end < self.start:
+            raise ValueError(
+                "The end date cannot be less than the start date."
+            )
+        return self
