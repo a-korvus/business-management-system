@@ -341,13 +341,21 @@ class CalendarEvent(Base):
         nullable=False,
     )
     all_day: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
     users: Mapped[list[User]] = relationship(
         "User",
         secondary=users_calendar_events_table,
         back_populates="calendar_events",
     )
-
     related_task: Mapped[Task | None] = relationship(
         "Task",
         back_populates="calendar_event",
