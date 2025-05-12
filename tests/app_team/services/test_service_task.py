@@ -1,6 +1,8 @@
 """Test TaskService from 'app_team'."""
 
+import random
 from datetime import datetime, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
 from faker import Faker
@@ -8,8 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project.app_auth.domain.models import User
 from project.app_auth.infrastructure.security import get_password_hasher
+from project.app_org.domain.models import Command
 from project.app_team.application.enums import TaskGrade, TaskStatus
-from project.app_team.application.schemas import TaskCreate, TaskUpdate
+from project.app_team.application.schemas import (
+    TaskCreate,
+    TaskPeriod,
+    TaskUpdate,
+)
 from project.app_team.application.services.task import TaskService
 from project.app_team.domain.models import Task
 
@@ -239,3 +246,251 @@ async def test_deactivate_task(
     await verify_task_service.deactivate_task(task.id)
 
     assert task.is_active is False
+
+
+async def test_get_assigned_tasks(
+    verify_task_service: TaskService,
+    fake_instance: Faker,
+    db_session: AsyncSession,
+) -> None:
+    """Test receiving all existing tasks assigned to a user."""
+    creator_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    assignee_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    db_session.add(creator_user)
+    db_session.add(assignee_user)
+    await db_session.flush([creator_user, assignee_user])
+
+    task_count = 0
+    for _ in range(3, 10):
+        db_session.add(
+            Task(
+                title=fake_instance.text(max_nb_chars=random.randint(10, 500)),
+                description=fake_instance.text(
+                    max_nb_chars=random.randint(10, 1000),
+                ),
+                due_date=datetime.now(timezone.utc)
+                + timedelta(days=random.randint(1, 15)),
+                creator_id=str(creator_user.id),
+                assignee_id=str(assignee_user.id),
+            )
+        )
+        task_count += 1
+    await db_session.commit()
+
+    requested_period = TaskPeriod(
+        start=datetime.now(timezone.utc).date() - timedelta(days=1),
+        end=datetime.now(timezone.utc).date() + timedelta(days=15),
+    )
+    assigned_tasks = await verify_task_service.get_assigned_tasks(
+        assignee_id=assignee_user.id,
+        period=requested_period,
+    )
+
+    assert isinstance(assigned_tasks, list)
+    assert len(assigned_tasks) == task_count
+
+
+async def test_get_grades_assigned_tasks(
+    verify_task_service: TaskService,
+    fake_instance: Faker,
+    db_session: AsyncSession,
+) -> None:
+    """Test receiving all existing tasks assigned to a user."""
+    creator_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    assignee_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    db_session.add(creator_user)
+    db_session.add(assignee_user)
+    await db_session.flush([creator_user, assignee_user])
+
+    task_count = 0
+    for _ in range(3, 10):
+        db_session.add(
+            Task(
+                title=fake_instance.text(max_nb_chars=random.randint(10, 500)),
+                description=fake_instance.text(
+                    max_nb_chars=random.randint(10, 1000),
+                ),
+                grade=random.choice(TaskGrade.get_values()),
+                due_date=datetime.now(timezone.utc)
+                + timedelta(days=random.randint(1, 15)),
+                creator_id=str(creator_user.id),
+                assignee_id=str(assignee_user.id),
+            )
+        )
+        task_count += 1
+    await db_session.commit()
+
+    requested_period = TaskPeriod(
+        start=datetime.now(timezone.utc).date() - timedelta(days=1),
+        end=datetime.now(timezone.utc).date() + timedelta(days=15),
+    )
+    assigned_tasks = await verify_task_service.get_grades_assigned_tasks(
+        assignee_id=assignee_user.id,
+        period=requested_period,
+    )
+
+    assert isinstance(assigned_tasks, list)
+    assert len(assigned_tasks) == task_count
+    for result in assigned_tasks:
+        assert isinstance(result, tuple)
+        assert result[1] in TaskGrade.get_values()
+
+
+async def test_get_avg_grade_period(
+    verify_task_service: TaskService,
+    fake_instance: Faker,
+    db_session: AsyncSession,
+) -> None:
+    """Test receiving average grade of user tasks for a specified period."""
+    creator_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    assignee_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    db_session.add(creator_user)
+    db_session.add(assignee_user)
+    await db_session.flush([creator_user, assignee_user])
+
+    total_grade = Decimal("0")
+    task_count = 0
+    for _ in range(3, 10):
+        grade = random.choice(TaskGrade.get_values())
+        db_session.add(
+            Task(
+                title=fake_instance.text(max_nb_chars=random.randint(10, 500)),
+                description=fake_instance.text(
+                    max_nb_chars=random.randint(10, 1000),
+                ),
+                grade=grade,
+                due_date=datetime.now(timezone.utc)
+                + timedelta(days=random.randint(1, 15)),
+                creator_id=str(creator_user.id),
+                assignee_id=str(assignee_user.id),
+            )
+        )
+        total_grade += Decimal(grade)
+        task_count += 1
+    await db_session.commit()
+
+    expected_avg = total_grade / Decimal(task_count)
+    expected_avg_round = expected_avg.quantize(
+        Decimal("0.0001"),
+        rounding=ROUND_HALF_UP,
+    )
+    requested_period = TaskPeriod(
+        start=datetime.now(timezone.utc).date() - timedelta(days=1),
+        end=datetime.now(timezone.utc).date() + timedelta(days=15),
+    )
+    avg_grade = await verify_task_service.get_avg_grade_period(
+        assignee_id=assignee_user.id,
+        period=requested_period,
+    )
+
+    assert isinstance(avg_grade, Decimal)
+    assert expected_avg_round == avg_grade
+
+
+async def test_get_avg_grade_period_command(
+    verify_task_service: TaskService,
+    fake_instance: Faker,
+    db_session: AsyncSession,
+) -> None:
+    """Test receiving average grade of user command for a specified period."""
+    user_1 = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    user_2 = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    db_session.add(user_1)
+    db_session.add(user_2)
+    await db_session.flush([user_1, user_2])
+
+    command = Command(name=fake_instance.company())
+    command.users.append(user_1)
+    command.users.append(user_2)
+    db_session.add(command)
+
+    total_grade_1 = Decimal("0")
+    total_grade_2 = Decimal("0")
+    task_count = 0
+
+    for _ in range(3, 10):
+        grade_1 = random.choice(TaskGrade.get_values())
+        grade_2 = random.choice(TaskGrade.get_values())
+
+        db_session.add(
+            Task(
+                title=fake_instance.text(max_nb_chars=random.randint(10, 500)),
+                description=fake_instance.text(
+                    max_nb_chars=random.randint(10, 1000),
+                ),
+                grade=grade_2,
+                due_date=datetime.now(timezone.utc)
+                + timedelta(days=random.randint(1, 15)),
+                creator_id=str(user_1.id),
+                assignee_id=str(user_2.id),
+            )
+        )
+        db_session.add(
+            Task(
+                title=fake_instance.text(max_nb_chars=random.randint(10, 500)),
+                description=fake_instance.text(
+                    max_nb_chars=random.randint(10, 1000),
+                ),
+                grade=grade_1,
+                due_date=datetime.now(timezone.utc)
+                + timedelta(days=random.randint(1, 15)),
+                creator_id=str(user_2.id),
+                assignee_id=str(user_1.id),
+            )
+        )
+        total_grade_1 += Decimal(grade_1)
+        total_grade_2 += Decimal(grade_2)
+        task_count += 1
+    await db_session.commit()
+
+    expected_avg_1 = total_grade_1 / Decimal(task_count)
+    expected_avg_2 = total_grade_2 / Decimal(task_count)
+    common_avg = (expected_avg_1 + expected_avg_2) / Decimal("2")
+    common_avg_round = common_avg.quantize(
+        Decimal("0.0001"),
+        rounding=ROUND_HALF_UP,
+    )
+
+    requested_period = TaskPeriod(
+        start=datetime.now(timezone.utc).date() - timedelta(days=1),
+        end=datetime.now(timezone.utc).date() + timedelta(days=15),
+    )
+    avg_grade = await verify_task_service.get_avg_grade_period_command(
+        assignee_id=user_2.id,
+        period=requested_period,
+    )
+
+    assert isinstance(avg_grade, Decimal)
+    assert common_avg_round == avg_grade

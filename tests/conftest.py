@@ -1,11 +1,11 @@
 """Pytest configuration settings."""
 
 import asyncio
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 import pytest
 from faker import Faker
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Response
 from pytest import FixtureRequest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -28,6 +28,7 @@ from project.config import settings
 from project.core.db.base import Base
 from project.core.log_config import get_logger
 from project.main import app
+from tests.helpers import get_auth_token
 from tests.setup_teardown_db import (
     setup_db_before_tests,
     teardown_db_after_tests,
@@ -228,3 +229,25 @@ def fake_user_schema(fake_instance: Faker) -> UserCreate:
         email=fake_instance.email(),
         password=fake_instance.password(),
     )
+
+
+@pytest.fixture(scope="function")
+async def authenticated_user(
+    httpx_test_client: AsyncClient,
+    fake_user_schema: UserCreate,
+) -> dict[str, Any]:
+    """Create new user and return this user data."""
+    response: Response = await httpx_test_client.post(
+        url=f"{settings.AUTH.PREFIX_AUTH}/register/",
+        json=fake_user_schema.model_dump(),
+    )
+    assert response.status_code == 201
+
+    new_user_data: dict = response.json()
+    token = await get_auth_token(
+        httpx_client=httpx_test_client,
+        email=fake_user_schema.email,
+        password=fake_user_schema.password,
+    )
+
+    return {"user": new_user_data, "token": token}
