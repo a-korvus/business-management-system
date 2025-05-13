@@ -6,19 +6,22 @@ from decimal import Decimal
 
 from sqlalchemy import String, and_, case, cast, func, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql.expression import ColumnElement
 
 from project.app_auth.domain.models import User
+from project.app_org.domain.models import Command
 from project.app_team.application.enums import TaskGrade
 from project.app_team.application.interfaces import (
     AbsCalendarEventRepo,
+    AbsMeetingRepo,
     AbsPartnerRepo,
     AbsTaskCommentRepo,
     AbsTaskRepo,
 )
 from project.app_team.domain.models import (
     CalendarEvent,
+    Meeting,
     Task,
     TaskComment,
     users_calendar_events_table,
@@ -55,6 +58,57 @@ class SAPartnerRepo(AbsPartnerRepo):
         if not command_id:
             return None
         return command_id
+
+    async def get_command_by_id(self, command_id: uuid.UUID) -> Command | None:
+        """Get command by ID."""
+        result = await self._session.execute(
+            select(Command).where(Command.id == command_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def user_share_command_id(
+        self,
+        user_ids: list[uuid.UUID] | set[uuid.UUID],
+        target_command_id: uuid.UUID,
+    ) -> bool:
+        """Check all users in the list belong to the same command."""
+        if not user_ids:
+            return False
+
+        if isinstance(user_ids, list):
+            uniq_user_ids = set(user_ids)
+        else:
+            uniq_user_ids = user_ids
+        if len(uniq_user_ids) == 0:
+            return False
+
+        stmt = select(func.count(User.id)).where(
+            User.id.in_(uniq_user_ids),
+            User.command_id == target_command_id,
+        )
+        result = await self._session.execute(stmt)
+        count_matching_users = result.scalar_one_or_none()
+
+        if count_matching_users is None:
+            return False
+
+        return count_matching_users == len(uniq_user_ids)
+
+    async def users_in_seq(
+        self,
+        user_ids: list[uuid.UUID] | set[uuid.UUID],
+    ) -> list[User]:
+        """Get users by its IDs."""
+        if isinstance(user_ids, list):
+            user_ids = set(user_ids)
+
+        if not user_ids:
+            raise ValueError("Got an empty ids list.")
+
+        result = await self._session.execute(
+            select(User).where(User.id.in_(user_ids))
+        )
+        return list(result.unique().scalars().all())
 
 
 class SATaskRepo(AbsTaskRepo):
@@ -303,3 +357,41 @@ class SACalendarEventRepo(AbsCalendarEventRepo):
 
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+
+class SAMeetingRepo(AbsMeetingRepo):
+    """Implementation of meeting using sqlalchemy."""
+
+    def __init__(self, session: AsyncSession | None) -> None:
+        """Initialize a Meeting Repository."""
+        if session is None:
+            raise ValueError(f"{self.__class__.__name__} get an empty session")
+
+        self._session = session
+
+    async def get_by_id(self, meeting_id: uuid.UUID) -> Meeting | None:
+        """Get Meeting by its ID."""
+        result = await self._session.execute(
+            select(Meeting).where(Meeting.id == meeting_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_detail(self, meeting_id: uuid.UUID) -> Meeting | None:
+        """Get Meeting by its ID. Load all relationships."""
+        result = await self._session.execute(
+            select(Meeting)
+            .options(
+                selectinload(Meeting.members),
+                selectinload(Meeting.creator),
+                selectinload(Meeting.command),
+                joinedload(Meeting.calendar_event).selectinload(
+                    CalendarEvent.users
+                ),
+            )
+            .where(Meeting.id == meeting_id)
+        )
+        return result.unique().scalar_one_or_none()
+
+    async def add(self, meeting: Meeting) -> None:
+        """Add Meeting object to session."""
+        self._session.add(meeting)

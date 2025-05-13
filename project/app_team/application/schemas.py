@@ -126,20 +126,16 @@ class Period(BaseModel):
         return self
 
 
-class MeetingBase(BaseModel):
-    """Meeting base schema."""
-
-
 class MeetingCreate(BaseModel):
     """Validate the meeting input data."""
 
     topic: str | None = Field(..., max_length=500)
     description: str | None = None
-    status: MeetingStatus | None = None
     start_time: datetime
     end_time: datetime
     creator_id: uuid.UUID
     command_id: uuid.UUID
+
     members_ids: list[uuid.UUID]
 
 
@@ -168,6 +164,8 @@ class MeetingRead(BaseModel):
     creator_id: uuid.UUID | None
     command_id: uuid.UUID
     calendar_event_id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CalendarEventBase(BaseModel):
@@ -214,6 +212,8 @@ class CalendarEventRead(CalendarEventBase):
     event_type: EventType
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserToEvent(BaseModel):

@@ -43,3 +43,13 @@ class OverlapError(ValueError):
         self.c_event_id = c_event_id
 
         super().__init__(f"Unable to add user to event '{c_event_id}'.")
+
+
+class MeetingNotFound(DomainError):
+    """Exception if a Meeting does not exist."""
+
+    def __init__(self, meeting_id: uuid.UUID) -> None:
+        """Initialize the exception."""
+        self.meeting_id = meeting_id
+
+        super().__init__(f"Meeting with id '{meeting_id}' not found.")

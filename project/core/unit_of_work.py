@@ -97,3 +97,13 @@ class BaseSAUnitOfWork(AbsUnitOfWork[ModelType]):
             raise RuntimeError("Session is not active for rollback.")
 
         await self._session.rollback()
+
+    async def flush(
+        self,
+        instances: Sequence[ModelType] | None = None,
+    ) -> None:
+        """Flush the current session objects."""
+        if not self._session:
+            raise RuntimeError("Session is not active for flush.")
+
+        await self._session.flush(instances)

@@ -309,6 +309,10 @@ class Meeting(Base):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the meeting. Create a calendar event together with."""
+        meet_members: list[User] | None = None
+        if "meet_members" in kwargs:
+            meet_members = kwargs.pop("meet_members")
+
         super().__init__(*args, **kwargs)
 
         if not hasattr(self, "calendar_event") or self.calendar_event is None:
@@ -316,7 +320,16 @@ class Meeting(Base):
                 title=self.topic,
                 start_time=self.start_time,
                 end_time=self.end_time,
+                event_type=EventType.MEETING,
             )
+
+        if meet_members:
+            self.add_members(meet_members)
+
+    def add_members(self, new_members: list[User]) -> None:
+        """Add new memebers to the meeting and related event."""
+        self.members.extend(new_members)
+        self.calendar_event.users.extend(new_members)
 
 
 class CalendarEvent(Base):

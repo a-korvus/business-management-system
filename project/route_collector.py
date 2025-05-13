@@ -11,6 +11,7 @@ from project.app_org.presentation.routers.departments import (
 from project.app_org.presentation.routers.news import router as rr_news
 from project.app_org.presentation.routers.roles import router as rr_roles
 from project.app_team.presentation.routers.events import router as rr_events
+from project.app_team.presentation.routers.meetings import router as rr_meeting
 from project.app_team.presentation.routers.tasks import router as rr_tasks
 
 project_routers: list[APIRouter] = [
@@ -22,4 +23,5 @@ project_routers: list[APIRouter] = [
     rr_news,
     rr_tasks,
     rr_events,
+    rr_meeting,
 ]

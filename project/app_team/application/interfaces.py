@@ -6,7 +6,13 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from project.app_auth.domain.models import User
-from project.app_team.domain.models import CalendarEvent, Task, TaskComment
+from project.app_org.domain.models import Command
+from project.app_team.domain.models import (
+    CalendarEvent,
+    Meeting,
+    Task,
+    TaskComment,
+)
 
 
 class AbsPartnerRepo(abc.ABC):
@@ -23,6 +29,28 @@ class AbsPartnerRepo(abc.ABC):
         user_id: uuid.UUID,
     ) -> uuid.UUID | None:
         """Get command ID of user by user ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_command_by_id(self, command_id: uuid.UUID) -> Command | None:
+        """Get command by ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def user_share_command_id(
+        self,
+        user_ids: list[uuid.UUID] | set[uuid.UUID],
+        target_command_id: uuid.UUID,
+    ) -> bool:
+        """Check all users in the list belong to the same command."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def users_in_seq(
+        self,
+        user_ids: list[uuid.UUID] | set[uuid.UUID],
+    ) -> list[User]:
+        """Get users by its IDs."""
         raise NotImplementedError
 
 
@@ -149,4 +177,23 @@ class AbsCalendarEventRepo(abc.ABC):
         event_id: uuid.UUID,
     ) -> uuid.UUID | None:
         """Check if existing user events overlap with the new event."""
+        raise NotImplementedError
+
+
+class AbsMeetingRepo(abc.ABC):
+    """Interface for implementing model-specific Meeting operations."""
+
+    @abc.abstractmethod
+    async def get_by_id(self, meeting_id: uuid.UUID) -> Meeting | None:
+        """Get Meeting by its ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_by_id_detail(self, meeting_id: uuid.UUID) -> Meeting | None:
+        """Get Meeting by its ID. Load all relationships."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def add(self, meeting: Meeting) -> None:
+        """Add Meeting object to session."""
         raise NotImplementedError

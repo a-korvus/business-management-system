@@ -7,6 +7,7 @@ from fastapi import Depends
 from project.app_team.application.services.calendar_events import (
     CalendarEventService,
 )
+from project.app_team.application.services.meeting import MeetingService
 from project.app_team.application.services.task import TaskService
 from project.app_team.application.services.task_comment import (
     TaskCommentService,
@@ -42,3 +43,10 @@ def get_event_service(
 ) -> CalendarEventService:
     """Get CalendarEventService instance."""
     return CalendarEventService(uow=uow)
+
+
+def get_meeting_service(
+    uow: Annotated[SATeamUnitOfWork, Depends(get_uof)],
+) -> MeetingService:
+    """Get MeetingService instance."""
+    return MeetingService(uow=uow)
