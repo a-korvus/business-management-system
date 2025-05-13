@@ -5,6 +5,9 @@ from typing import Callable
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from project.app_team.application.services.calendar_events import (
+    CalendarEventService,
+)
 from project.app_team.application.services.task import TaskService
 from project.app_team.application.services.task_comment import (
     TaskCommentService,
@@ -43,3 +46,11 @@ def verify_taskcomment_service(
 ) -> TaskCommentService:
     """Get task comment service instance."""
     return TaskCommentService(uow_factory())
+
+
+@pytest.fixture(scope="function")
+def verify_event_service(
+    uow_factory: Callable[[], SATeamUnitOfWork],
+) -> CalendarEventService:
+    """Get calendar event service instance."""
+    return CalendarEventService(uow_factory())

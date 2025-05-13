@@ -13,13 +13,15 @@ from project.app_auth.infrastructure.security import get_password_hasher
 from project.app_org.domain.models import Command
 from project.app_team.application.enums import TaskGrade, TaskStatus
 from project.app_team.application.schemas import (
+    Period,
     TaskCreate,
-    TaskPeriod,
     TaskUpdate,
 )
 from project.app_team.application.services.task import TaskService
-from project.app_team.domain.models import Task
+from project.app_team.domain.models import CalendarEvent, Task
+from project.core.log_config import get_logger
 
+logger = get_logger(__name__)
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("truncate_tables")]
 
 
@@ -39,20 +41,28 @@ async def test_create_assignment(
         plain_password=fake_instance.password(),
         hasher=get_password_hasher(),
     )
-    db_session.add(creator_user)
-    db_session.add(assignee_user)
+    date_end = datetime.now(timezone.utc) + timedelta(days=2)
+    relate_event = CalendarEvent(
+        title=fake_instance.text(max_nb_chars=500),
+        start_time=datetime.now(timezone.utc) + timedelta(days=1),
+        end_time=date_end,
+    )
+    db_session.add_all([assignee_user, creator_user, relate_event])
     await db_session.commit()
 
     assert isinstance(creator_user, User)
     assert creator_user.id is not None
     assert isinstance(assignee_user, User)
     assert assignee_user.id is not None
+    assert isinstance(relate_event, CalendarEvent)
+    assert relate_event.id is not None
 
     new_task_schema = TaskCreate(
         title=fake_instance.text(max_nb_chars=500),
-        due_date=datetime.now(timezone.utc) + timedelta(days=2),
+        due_date=date_end,
         creator_id=creator_user.id,
         assignee_id=assignee_user.id,
+        calendar_event_id=relate_event.id,
     )
     new_task = await verify_task_service.create_assignment(new_task_schema)
 
@@ -65,6 +75,7 @@ async def test_create_assignment(
     assert new_task.status == TaskStatus.OPEN
     assert new_task.creator_id == creator_user.id
     assert new_task.assignee_id == assignee_user.id
+    assert new_task.calendar_event_id == relate_event.id
 
 
 async def test_update_task(
@@ -208,6 +219,58 @@ async def test_update_task_grade(
     assert upd_task.grade == TaskGrade.DONE_DEADLINE
 
 
+async def test_update_task_event(
+    verify_task_service: TaskService,
+    fake_instance: Faker,
+    db_session: AsyncSession,
+) -> None:
+    """Test updating a task. Set related event."""
+    creator_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    assignee_user = User(
+        email=fake_instance.unique.email(),
+        plain_password=fake_instance.password(),
+        hasher=get_password_hasher(),
+    )
+    date_end = datetime.now(timezone.utc) + timedelta(days=2)
+    relate_event = CalendarEvent(
+        title=fake_instance.text(max_nb_chars=500),
+        start_time=datetime.now(timezone.utc) + timedelta(days=1),
+        end_time=date_end,
+    )
+    db_session.add_all([assignee_user, creator_user, relate_event])
+    await db_session.flush([creator_user, assignee_user, relate_event])
+
+    assert creator_user.id is not None
+    assert assignee_user.id is not None
+    assert relate_event.id is not None
+
+    new_task = Task(
+        title=fake_instance.text(max_nb_chars=500),
+        due_date=date_end,
+        creator_id=creator_user.id,
+        assignee_id=assignee_user.id,
+    )
+    db_session.add(new_task)
+    await db_session.commit()
+
+    assert new_task.id is not None
+    assert new_task.calendar_event_id is None
+
+    update_schema = TaskUpdate(calendar_event_id=relate_event.id)
+    upd_task = await verify_task_service.update_task(
+        task_id=new_task.id,
+        data=update_schema,
+    )
+
+    assert isinstance(upd_task, Task)
+    assert upd_task.id == new_task.id
+    assert upd_task.calendar_event_id == relate_event.id
+
+
 async def test_deactivate_task(
     verify_task_service: TaskService,
     fake_instance: Faker,
@@ -285,7 +348,7 @@ async def test_get_assigned_tasks(
         task_count += 1
     await db_session.commit()
 
-    requested_period = TaskPeriod(
+    requested_period = Period(
         start=datetime.now(timezone.utc).date() - timedelta(days=1),
         end=datetime.now(timezone.utc).date() + timedelta(days=15),
     )
@@ -336,7 +399,7 @@ async def test_get_grades_assigned_tasks(
         task_count += 1
     await db_session.commit()
 
-    requested_period = TaskPeriod(
+    requested_period = Period(
         start=datetime.now(timezone.utc).date() - timedelta(days=1),
         end=datetime.now(timezone.utc).date() + timedelta(days=15),
     )
@@ -398,7 +461,7 @@ async def test_get_avg_grade_period(
         Decimal("0.0001"),
         rounding=ROUND_HALF_UP,
     )
-    requested_period = TaskPeriod(
+    requested_period = Period(
         start=datetime.now(timezone.utc).date() - timedelta(days=1),
         end=datetime.now(timezone.utc).date() + timedelta(days=15),
     )
@@ -483,7 +546,7 @@ async def test_get_avg_grade_period_command(
         rounding=ROUND_HALF_UP,
     )
 
-    requested_period = TaskPeriod(
+    requested_period = Period(
         start=datetime.now(timezone.utc).date() - timedelta(days=1),
         end=datetime.now(timezone.utc).date() + timedelta(days=15),
     )
