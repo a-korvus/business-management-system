@@ -10,10 +10,10 @@ from project.app_auth.application.schemas import TokenData
 from project.app_auth.domain.exceptions import UserNotFound
 from project.app_auth.presentation.dependencies import get_current_user_data
 from project.app_team.application.schemas import (
+    Period,
     TaskCommentCreate,
     TaskCommentRead,
     TaskCreate,
-    TaskPeriod,
     TaskRead,
     TaskUpdate,
 )
@@ -21,7 +21,10 @@ from project.app_team.application.services.task import TaskService
 from project.app_team.application.services.task_comment import (
     TaskCommentService,
 )
-from project.app_team.domain.exceptions import TaskNotFound
+from project.app_team.domain.exceptions import (
+    CalendarEventNotFound,
+    TaskNotFound,
+)
 from project.app_team.domain.models import Task, TaskComment
 from project.app_team.presentation.dependencies import (
     get_task_service,
@@ -55,6 +58,11 @@ async def create_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
+    except CalendarEventNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except Exception as e:  # noqa
         logger.exception("Unexpected error while creating new task.")
         raise HTTPException(
@@ -82,6 +90,11 @@ async def update_task(
             detail=str(e),
         )
     except UserNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except CalendarEventNotFound as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
@@ -154,7 +167,7 @@ async def create_comment(
     status_code=status.HTTP_200_OK,
 )
 async def assigned_tasks(
-    period_schema: Annotated[TaskPeriod, Depends()],
+    period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
 ) -> list[Task]:
@@ -177,7 +190,7 @@ async def assigned_tasks(
     status_code=status.HTTP_200_OK,
 )
 async def grades_assigned_tasks(
-    period_schema: Annotated[TaskPeriod, Depends()],
+    period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
 ) -> list[tuple[str, int]]:
@@ -203,7 +216,7 @@ async def grades_assigned_tasks(
     status_code=status.HTTP_200_OK,
 )
 async def avg_grade_period(
-    period_schema: Annotated[TaskPeriod, Depends()],
+    period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
 ) -> ORJSONResponse:
@@ -230,7 +243,7 @@ async def avg_grade_period(
     status_code=status.HTTP_200_OK,
 )
 async def avg_grade_period_command(
-    period_schema: Annotated[TaskPeriod, Depends()],
+    period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     token_data: Annotated[TokenData, Depends(get_current_user_data)],
 ) -> ORJSONResponse:

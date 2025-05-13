@@ -4,6 +4,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from project.app_team.application.services.calendar_events import (
+    CalendarEventService,
+)
 from project.app_team.application.services.task import TaskService
 from project.app_team.application.services.task_comment import (
     TaskCommentService,
@@ -32,3 +35,10 @@ def get_taskcomment_service(
 ) -> TaskCommentService:
     """Get TaskCommentService instance."""
     return TaskCommentService(uow=uow)
+
+
+def get_event_service(
+    uow: Annotated[SATeamUnitOfWork, Depends(get_uof)],
+) -> CalendarEventService:
+    """Get CalendarEventService instance."""
+    return CalendarEventService(uow=uow)

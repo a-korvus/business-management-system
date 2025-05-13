@@ -1,10 +1,10 @@
 """Repository interfaces in the 'app_team' app."""
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import String, and_, case, cast, func, select
+from sqlalchemy import String, and_, case, cast, func, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import ColumnElement
@@ -12,11 +12,18 @@ from sqlalchemy.sql.expression import ColumnElement
 from project.app_auth.domain.models import User
 from project.app_team.application.enums import TaskGrade
 from project.app_team.application.interfaces import (
+    AbsCalendarEventRepo,
     AbsPartnerRepo,
     AbsTaskCommentRepo,
     AbsTaskRepo,
 )
-from project.app_team.domain.models import Task, TaskComment
+from project.app_team.domain.models import (
+    CalendarEvent,
+    Task,
+    TaskComment,
+    users_calendar_events_table,
+)
+from project.core.db.utils import load_all_relationships
 
 
 class SAPartnerRepo(AbsPartnerRepo):
@@ -221,3 +228,78 @@ class SATaskCommentRepo(AbsTaskCommentRepo):
     async def add(self, taskcomment: TaskComment) -> None:
         """Add a new TaskComment object to session."""
         self._session.add(taskcomment)
+
+
+class SACalendarEventRepo(AbsCalendarEventRepo):
+    """Implementation of calendar events repository using sqlalchemy."""
+
+    def __init__(self, session: AsyncSession | None) -> None:
+        """Initialize a CalendarEvent Repository."""
+        if session is None:
+            raise ValueError(f"{self.__class__.__name__} get an empty session")
+
+        self._session = session
+
+    async def get_by_id(self, c_event_id: uuid.UUID) -> CalendarEvent | None:
+        """Get CalendarEvent by its ID."""
+        result = await self._session.execute(
+            select(CalendarEvent).where(CalendarEvent.id == c_event_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_detail(
+        self,
+        c_event_id: uuid.UUID,
+    ) -> CalendarEvent | None:
+        """Get CalendarEvent by its ID. Load all relationships."""
+        result = await self._session.execute(
+            select(CalendarEvent)
+            .options(*load_all_relationships(CalendarEvent))
+            .where(CalendarEvent.id == c_event_id)
+        )
+        return result.unique().scalar_one_or_none()
+
+    async def list_all_period(
+        self,
+        start_date: date,
+        end_date: date,
+    ) -> list[CalendarEvent]:
+        """Get list of CalendarEvent objects for the specified period."""
+        stmt = select(CalendarEvent).where(
+            and_(
+                func.date(CalendarEvent.start_time) >= start_date,
+                func.date(CalendarEvent.end_time) <= end_date,
+            )
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def add(self, c_event: CalendarEvent) -> None:
+        """Add CalendarEvent object to session."""
+        self._session.add(c_event)
+
+    async def check_overlap_users(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        user_ids: set[uuid.UUID],
+        event_id: uuid.UUID,
+    ) -> uuid.UUID | None:
+        """Check if existing user events overlap with the new event."""
+        stmt = (
+            select(CalendarEvent.id)
+            .join(users_calendar_events_table)
+            .where(
+                and_(
+                    users_calendar_events_table.c.user_id.in_(user_ids),
+                    not_(CalendarEvent.id == event_id),
+                    and_(
+                        CalendarEvent.start_time < end_time,
+                        CalendarEvent.end_time > start_time,
+                    ),
+                )
+            )
+        ).limit(1)
+
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()

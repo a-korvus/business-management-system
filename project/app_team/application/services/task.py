@@ -6,11 +6,14 @@ from typing import Literal
 
 from project.app_auth.domain.exceptions import UserNotFound
 from project.app_team.application.schemas import (
+    Period,
     TaskCreate,
-    TaskPeriod,
     TaskUpdate,
 )
-from project.app_team.domain.exceptions import TaskNotFound
+from project.app_team.domain.exceptions import (
+    CalendarEventNotFound,
+    TaskNotFound,
+)
 from project.app_team.domain.models import Task
 from project.app_team.infrastructure.unit_of_work import SATeamUnitOfWork
 from project.core.log_config import get_logger
@@ -38,7 +41,7 @@ class TaskService:
     async def get_assigned_tasks(
         self,
         assignee_id: uuid.UUID,
-        period: TaskPeriod,
+        period: Period,
     ) -> list[Task]:
         """Get tasks assigned to a user for a period."""
         async with self.uow as uow:
@@ -55,7 +58,7 @@ class TaskService:
     async def get_grades_assigned_tasks(
         self,
         assignee_id: uuid.UUID,
-        period: TaskPeriod,
+        period: Period,
     ) -> list[tuple[str, int]]:
         """Get task titles assigned to a user for a period and its grades.
 
@@ -75,7 +78,7 @@ class TaskService:
     async def get_avg_grade_period(
         self,
         assignee_id: uuid.UUID,
-        period: TaskPeriod,
+        period: Period,
     ) -> Decimal | None:
         """Get average grade of user tasks for a specified period."""
         async with self.uow as uow:
@@ -92,7 +95,7 @@ class TaskService:
     async def get_avg_grade_period_command(
         self,
         assignee_id: uuid.UUID,
-        period: TaskPeriod,
+        period: Period,
     ) -> Decimal | None:
         """Get average grade of user command for a specified period."""
         async with self.uow as uow:
@@ -120,6 +123,11 @@ class TaskService:
             if not assignee:
                 raise UserNotFound(user_id=data.assignee_id)
 
+            if data.calendar_event_id and not await uow.events.get_by_id(
+                data.calendar_event_id
+            ):
+                raise CalendarEventNotFound(data.calendar_event_id)
+
             new_task = Task(**data.model_dump())
             await uow.tasks.add(new_task)
             await uow.commit()
@@ -136,6 +144,10 @@ class TaskService:
                 data.assignee_id
             ):
                 raise UserNotFound(user_id=data.assignee_id)
+            if data.calendar_event_id and not await uow.events.get_by_id(
+                data.calendar_event_id
+            ):
+                raise CalendarEventNotFound(data.calendar_event_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
             needs_update = False

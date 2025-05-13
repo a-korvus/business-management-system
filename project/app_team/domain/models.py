@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from sqlalchemy import UUID as UUID_SQL
 from sqlalchemy import Boolean, Column, DateTime
@@ -231,7 +231,7 @@ class Meeting(Base):
         index=True,
     )
     topic: Mapped[str] = mapped_column(String(500), nullable=False)
-    description: Mapped[str] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         String(),
         nullable=True,
         default=None,
@@ -307,6 +307,17 @@ class Meeting(Base):
         lazy="joined",
     )
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the meeting. Create a calendar event together with."""
+        super().__init__(*args, **kwargs)
+
+        if not hasattr(self, "calendar_event") or self.calendar_event is None:
+            self.calendar_event = CalendarEvent(
+                title=self.topic,
+                start_time=self.start_time,
+                end_time=self.end_time,
+            )
+
 
 class CalendarEvent(Base):
     """Team event entity."""
@@ -341,6 +352,7 @@ class CalendarEvent(Base):
         nullable=False,
     )
     all_day: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

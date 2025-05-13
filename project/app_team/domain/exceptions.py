@@ -23,3 +23,23 @@ class TaskCommentNotFound(DomainError):
         self.task_comment_id = task_comment_id
 
         super().__init__(f"TaskComment with id '{task_comment_id}' not found.")
+
+
+class CalendarEventNotFound(DomainError):
+    """Exception if a Calendar Event does not exist."""
+
+    def __init__(self, c_event_id: uuid.UUID) -> None:
+        """Initialize the exception."""
+        self.c_event_id = c_event_id
+
+        super().__init__(f"CalendarEvent with id '{c_event_id}' not found.")
+
+
+class OverlapError(ValueError):
+    """Exception if user already has an event for the specified period."""
+
+    def __init__(self, c_event_id: uuid.UUID) -> None:
+        """Initialize the exception."""
+        self.c_event_id = c_event_id
+
+        super().__init__(f"Unable to add user to event '{c_event_id}'.")

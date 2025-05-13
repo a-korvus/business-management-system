@@ -14,7 +14,12 @@ from pydantic import (
     model_validator,
 )
 
-from project.app_team.application.enums import TaskGrade, TaskStatus
+from project.app_team.application.enums import (
+    EventType,
+    MeetingStatus,
+    TaskGrade,
+    TaskStatus,
+)
 
 
 class TaskBase(BaseModel):
@@ -30,6 +35,7 @@ class TaskCreate(TaskBase):
     due_date: datetime
     creator_id: uuid.UUID
     assignee_id: uuid.UUID
+    calendar_event_id: uuid.UUID | None = None
 
     @field_validator("due_date", mode="after")
     @classmethod
@@ -49,6 +55,7 @@ class TaskUpdate(TaskBase):
     grade: TaskGrade | None = None
     due_date: datetime | None = None
     assignee_id: uuid.UUID | None = None
+    calendar_event_id: uuid.UUID | None = None
 
 
 class TaskRead(TaskBase):
@@ -64,6 +71,7 @@ class TaskRead(TaskBase):
     updated_at: datetime
     creator_id: uuid.UUID
     assignee_id: uuid.UUID
+    calendar_event_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -102,7 +110,7 @@ class TaskCommentRead(TaskCommentBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class TaskPeriod(BaseModel):
+class Period(BaseModel):
     """Scheme of checking the period boundaries."""
 
     start: date = Field(..., description="Period start date (YYYY-MM-DD)")
@@ -116,3 +124,100 @@ class TaskPeriod(BaseModel):
                 "The end date cannot be less than the start date."
             )
         return self
+
+
+class MeetingBase(BaseModel):
+    """Meeting base schema."""
+
+
+class MeetingCreate(BaseModel):
+    """Validate the meeting input data."""
+
+    topic: str | None = Field(..., max_length=500)
+    description: str | None = None
+    status: MeetingStatus | None = None
+    start_time: datetime
+    end_time: datetime
+    creator_id: uuid.UUID
+    command_id: uuid.UUID
+    members_ids: list[uuid.UUID]
+
+
+class MeetingUpdate(BaseModel):
+    """Update existing meeting event."""
+
+    topic: str | None = Field(default=None, max_length=500)
+    description: str | None = None
+    status: MeetingStatus | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+
+
+class MeetingRead(BaseModel):
+    """Schema to serialize the existing meeting data."""
+
+    id: uuid.UUID
+    topic: str
+    description: str | None
+    status: MeetingStatus
+    start_time: datetime
+    end_time: datetime
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    creator_id: uuid.UUID | None
+    command_id: uuid.UUID
+    calendar_event_id: uuid.UUID
+
+
+class CalendarEventBase(BaseModel):
+    """Calendar event base schema."""
+
+    description: str | None = None
+    all_day: bool | None = False
+
+
+class CalendarEventCreate(CalendarEventBase):
+    """Validate the calendar event input data."""
+
+    title: str = Field(..., max_length=500)
+    start_time: datetime
+    end_time: datetime
+    event_type: EventType | None = EventType.GENERAL
+
+    @model_validator(mode="after")
+    def check_dates_order(self) -> Self:
+        """Make sure the end date more or equal the start date."""
+        if self.end_time < self.start_time:
+            raise ValueError(
+                "The end date cannot be less than the start date."
+            )
+        return self
+
+
+class CalendarEventUpdate(CalendarEventBase):
+    """Update existing calendar event."""
+
+    title: str | None = Field(default=None, max_length=500)
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    event_type: EventType | None = None
+
+
+class CalendarEventRead(CalendarEventBase):
+    """Schema to serialize the existing calendar event data."""
+
+    id: uuid.UUID
+    title: str
+    start_time: datetime
+    end_time: datetime
+    event_type: EventType
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserToEvent(BaseModel):
+    """Schema to validate related variables."""
+
+    user_id: uuid.UUID
+    event_id: uuid.UUID

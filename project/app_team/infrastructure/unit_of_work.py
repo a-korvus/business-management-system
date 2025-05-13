@@ -3,6 +3,7 @@
 from typing import Self
 
 from project.app_team.infrastructure.repos import (
+    SACalendarEventRepo,
     SAPartnerRepo,
     SATaskCommentRepo,
     SATaskRepo,
@@ -16,6 +17,7 @@ class SATeamUnitOfWork(BaseSAUnitOfWork):
     partners: SAPartnerRepo
     tasks: SATaskRepo
     tasks_comments: SATaskCommentRepo
+    events: SACalendarEventRepo
 
     async def __aenter__(self) -> Self:
         """Create a session in the parent object. Initialize repositories."""
@@ -24,5 +26,6 @@ class SATeamUnitOfWork(BaseSAUnitOfWork):
         self.partners = SAPartnerRepo(self._session)
         self.tasks = SATaskRepo(self._session)
         self.tasks_comments = SATaskCommentRepo(self._session)
+        self.events = SACalendarEventRepo(self._session)
 
         return self

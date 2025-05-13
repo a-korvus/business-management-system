@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from project.app_auth.domain.models import User
-from project.app_team.domain.models import Task, TaskComment
+from project.app_team.domain.models import CalendarEvent, Task, TaskComment
 
 
 class AbsPartnerRepo(abc.ABC):
@@ -107,4 +107,46 @@ class AbsTaskCommentRepo(abc.ABC):
     @abc.abstractmethod
     async def add(self, taskcomment: TaskComment) -> None:
         """Add TaskComment object to session."""
+        raise NotImplementedError
+
+
+class AbsCalendarEventRepo(abc.ABC):
+    """Interface for implementing model-specific CalendarEvent operations."""
+
+    @abc.abstractmethod
+    async def get_by_id(self, c_event_id: uuid.UUID) -> CalendarEvent | None:
+        """Get CalendarEvent by its ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_by_id_detail(
+        self,
+        c_event_id: uuid.UUID,
+    ) -> CalendarEvent | None:
+        """Get CalendarEvent by its ID. Load all relationships."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def list_all_period(
+        self,
+        start_date: date,
+        end_date: date,
+    ) -> list[CalendarEvent]:
+        """Get list of CalendarEvent objects for the specified period."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def add(self, c_event: CalendarEvent) -> None:
+        """Add CalendarEvent object to session."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def check_overlap_users(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        user_ids: set[uuid.UUID],
+        event_id: uuid.UUID,
+    ) -> uuid.UUID | None:
+        """Check if existing user events overlap with the new event."""
         raise NotImplementedError
