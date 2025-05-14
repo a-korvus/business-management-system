@@ -27,9 +27,7 @@ class BaseSAUnitOfWork(AbsUnitOfWork[ModelType]):
             )
 
         self._session_factory = session_factory
-        self._external_session = session
-
-        self._session: AsyncSession | None = session
+        self._session = session
 
     async def __aenter__(self) -> Self:
         """Enter to context manager. Create a session.

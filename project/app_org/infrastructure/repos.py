@@ -19,11 +19,8 @@ from project.core.db.utils import load_all_relationships
 class SACommandRepo(AbsCommandRepository):
     """Implementation of command repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Command Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, command_id: uuid.UUID) -> Command | None:
@@ -69,23 +66,23 @@ class SACommandRepo(AbsCommandRepository):
     async def list_all(self) -> list[Command]:
         """Get all commands."""
         result = await self._session.execute(
-            select(Command).options(raiseload(Command.departments))
+            select(Command)
+            .options(raiseload(Command.departments))
+            .order_by(Command.created_at)
         )
         return list(result.scalars().all())
 
     async def add(self, command: Command) -> None:
         """Add new command in sqlalchemy async session."""
         self._session.add(command)
+        await self._session.flush([command])
 
 
 class SADepartmentRepo(AbsDepartmentRepository):
     """Implementation of department repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Department Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, department_id: uuid.UUID) -> Department | None:
@@ -127,25 +124,25 @@ class SADepartmentRepo(AbsDepartmentRepository):
     async def list_all(self) -> list[Department]:
         """Get all departments."""
         result = await self._session.execute(
-            select(Department).options(
+            select(Department)
+            .options(
                 raiseload(Department.command), raiseload(Department.roles)
             )
+            .order_by(Department.created_at)
         )
         return list(result.scalars().all())
 
     async def add(self, department: Department) -> None:
         """Add new department in sqlalchemy async session."""
         self._session.add(department)
+        await self._session.flush([department])
 
 
 class SARoleRepo(AbsRoleRepository):
     """Implementation of role repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Role Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, role_id: uuid.UUID) -> Role | None:
@@ -183,25 +180,23 @@ class SARoleRepo(AbsRoleRepository):
     async def list_all(self) -> list[Role]:
         """Get all role."""
         result = await self._session.execute(
-            select(Role).options(
-                raiseload(Role.department), raiseload(Role.users)
-            )
+            select(Role)
+            .options(raiseload(Role.department), raiseload(Role.users))
+            .order_by(Role.created_at)
         )
         return list(result.scalars().all())
 
     async def add(self, role: Role) -> None:
         """Add new role in sqlalchemy async session."""
         self._session.add(role)
+        await self._session.flush([role])
 
 
 class SANewsRepo(AbsNewsRepository):
     """Implementation of news repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a News Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, news_id: uuid.UUID) -> News | None:
@@ -213,9 +208,12 @@ class SANewsRepo(AbsNewsRepository):
 
     async def list_all(self) -> list[News]:
         """Get all news."""
-        result = await self._session.execute(select(News))
+        result = await self._session.execute(
+            select(News).order_by(News.updated_at)
+        )
         return list(result.scalars().all())
 
     async def add(self, news: News) -> None:
         """Add new news in sqlalchemy async session."""
         self._session.add(news)
+        await self._session.flush([news])

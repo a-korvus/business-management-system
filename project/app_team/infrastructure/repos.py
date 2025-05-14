@@ -32,11 +32,8 @@ from project.core.db.utils import load_all_relationships
 class SAPartnerRepo(AbsPartnerRepo):
     """Implementation of User-related actions."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Partner Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
@@ -114,11 +111,8 @@ class SAPartnerRepo(AbsPartnerRepo):
 class SATaskRepo(AbsTaskRepo):
     """Implementation of tasks repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Task Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, task_id: uuid.UUID) -> Task | None:
@@ -248,16 +242,14 @@ class SATaskRepo(AbsTaskRepo):
     async def add(self, task: Task) -> None:
         """Add a new Task object to session."""
         self._session.add(task)
+        await self._session.flush([task])
 
 
 class SATaskCommentRepo(AbsTaskCommentRepo):
     """Implementation of task commens repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a TaskComment Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, taskcomment_id: uuid.UUID) -> TaskComment | None:
@@ -276,22 +268,21 @@ class SATaskCommentRepo(AbsTaskCommentRepo):
             select(TaskComment)
             .options(selectinload(TaskComment.child_comments))  # type: ignore
             .where(TaskComment.id == taskcomment_id)
+            .order_by(TaskComment.created_at)
         )
         return result.scalar_one_or_none()
 
     async def add(self, taskcomment: TaskComment) -> None:
         """Add a new TaskComment object to session."""
         self._session.add(taskcomment)
+        await self._session.flush([taskcomment])
 
 
 class SACalendarEventRepo(AbsCalendarEventRepo):
     """Implementation of calendar events repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a CalendarEvent Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, c_event_id: uuid.UUID) -> CalendarEvent | None:
@@ -319,11 +310,15 @@ class SACalendarEventRepo(AbsCalendarEventRepo):
         end_date: date,
     ) -> list[CalendarEvent]:
         """Get list of CalendarEvent objects for the specified period."""
-        stmt = select(CalendarEvent).where(
-            and_(
-                func.date(CalendarEvent.start_time) >= start_date,
-                func.date(CalendarEvent.end_time) <= end_date,
+        stmt = (
+            select(CalendarEvent)
+            .where(
+                and_(
+                    func.date(CalendarEvent.start_time) >= start_date,
+                    func.date(CalendarEvent.end_time) <= end_date,
+                )
             )
+            .order_by(CalendarEvent.created_at)
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -331,6 +326,7 @@ class SACalendarEventRepo(AbsCalendarEventRepo):
     async def add(self, c_event: CalendarEvent) -> None:
         """Add CalendarEvent object to session."""
         self._session.add(c_event)
+        await self._session.flush([c_event])
 
     async def check_overlap_users(
         self,
@@ -362,11 +358,8 @@ class SACalendarEventRepo(AbsCalendarEventRepo):
 class SAMeetingRepo(AbsMeetingRepo):
     """Implementation of meeting using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a Meeting Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, meeting_id: uuid.UUID) -> Meeting | None:
@@ -395,3 +388,4 @@ class SAMeetingRepo(AbsMeetingRepo):
     async def add(self, meeting: Meeting) -> None:
         """Add Meeting object to session."""
         self._session.add(meeting)
+        await self._session.flush()

@@ -56,7 +56,6 @@ class MeetingService:
             meeting_data["meet_members"] = members
             meeting = Meeting(**meeting_data)
             await uow.meetings.add(meeting)
-            await uow.flush()
 
             overlap = await uow.events.check_overlap_users(
                 start_time=data.start_time,

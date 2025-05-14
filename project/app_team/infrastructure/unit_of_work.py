@@ -25,6 +25,9 @@ class SATeamUnitOfWork(BaseSAUnitOfWork):
         """Create a session in the parent object. Initialize repositories."""
         await super().__aenter__()
 
+        if self._session is None:
+            raise ValueError(f"{self.__class__.__name__} got an empty session")
+
         self.partners = SAPartnerRepo(self._session)
         self.tasks = SATaskRepo(self._session)
         self.tasks_comments = SATaskCommentRepo(self._session)

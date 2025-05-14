@@ -8,17 +8,13 @@ from sqlalchemy.orm import selectinload
 
 from project.app_auth.application.interfaces import AbstractUserRepository
 from project.app_auth.domain.models import User
-from project.app_org.domain.models import Command
 
 
 class SAUserRepository(AbstractUserRepository):
     """Implementation of user repository using sqlalchemy."""
 
-    def __init__(self, session: AsyncSession | None) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         """Initialize a User Repository."""
-        if session is None:
-            raise ValueError(f"{self.__class__.__name__} get an empty session")
-
         self._session = session
 
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
@@ -83,15 +79,20 @@ class SAUserRepository(AbstractUserRepository):
 
     async def list_all(self) -> list[User]:
         """Get all users."""
-        result = await self._session.execute(select(User))
+        result = await self._session.execute(
+            select(User).order_by(User.created_at)
+        )
         return list(result.scalars().all())
 
     async def add(self, user: User) -> None:
         """Add new user in sqlalchemy async session."""
         self._session.add(user)
+        await self._session.flush([user])
 
     async def check_command_exists(self, command_id: uuid.UUID) -> bool:
         """Check that the command exists."""
+        from project.app_org.domain.models import Command
+
         stmt = select(exists().where(Command.id == command_id))
         result = await self._session.execute(stmt)
-        return result.scalar_one()
+        return bool(result.scalar_one_or_none())
