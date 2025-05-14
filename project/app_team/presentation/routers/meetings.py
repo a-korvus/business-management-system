@@ -5,8 +5,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 
-from project.app_auth.domain.exceptions import UserNotFound
-from project.app_org.domain.exceptions import CommandNotFound
 from project.app_team.application.schemas import (
     MeetingCreate,
     MeetingRead,
@@ -42,16 +40,6 @@ async def create_meeting(
     """Create a new meeting."""
     try:
         return await meeting_service.create(data)
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    except CommandNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except OverlapError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

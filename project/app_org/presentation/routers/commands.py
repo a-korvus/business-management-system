@@ -16,7 +16,6 @@ from project.app_org.application.services.command import CommandService
 from project.app_org.domain.exceptions import (
     CommandNameExistsError,
     CommandNotEmpty,
-    CommandNotFound,
 )
 from project.app_org.domain.models import Command
 from project.app_org.presentation.dependencies import get_command_service
@@ -126,11 +125,6 @@ async def update_command(
             command_id=command_id,
             data=updating_data,
         )
-    except CommandNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except ValueError as e:  # ошибки валидации
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,11 +151,6 @@ async def deactivate_command(
     """Deactivate the Command by ID. Protected. For admins only."""
     try:
         await command_service.deactivate(command_id=command_id)
-    except CommandNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except CommandNotEmpty as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -188,11 +177,6 @@ async def activate_command(
     """Activate the Command by ID. Protected. For admins only."""
     try:
         await command_service.activate(command_id)
-    except CommandNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except Exception:  # noqa
         logger.exception("Unexpected error while activating the command.")
         raise HTTPException(

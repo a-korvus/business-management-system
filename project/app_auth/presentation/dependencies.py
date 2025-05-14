@@ -49,26 +49,29 @@ def get_user_service(
     return UserService(uow=uow)
 
 
-async def get_current_user_data(
+async def get_token_data(
     token: Annotated[str, Depends(oauth2_scheme)],
-) -> TokenData:
+) -> dict:
     """Decode the token and get data from it."""
-    token_data = decode_access_token(token)
+    token_data: TokenData | None = decode_access_token(token)
 
     if token_data is None or token_data.uid is None:
         raise CredentialException()
 
-    return token_data
+    token_data_dct: dict = token_data.model_dump()
+    token_data_dct["uid"] = uuid.UUID(token_data_dct.pop("uid"))
+
+    return token_data_dct
 
 
 async def get_current_user(
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     """Get current user from DB based on token data.
 
     Args:
-        token_data (Annotated[TokenData, Depends): Token data as schema.
+        token_data (Annotated[dict, Depends): Token data as schema.
         user_service (Annotated[UserService, Depends): App User service.
 
     Raises:
@@ -80,7 +83,7 @@ async def get_current_user(
         User: User model object.
     """
     try:
-        user_id = uuid.UUID(token_data.uid)
+        user_id = token_data["uid"]
         user: User | None = await user_service.get_by_id_detail(user_id)
 
         if user is None:
@@ -99,7 +102,7 @@ async def get_current_user(
 
 
 async def get_admin(
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     """Get current user from DB based on token data if he has admin role.
@@ -111,7 +114,7 @@ async def get_admin(
         User: Authenticated user that has an admin role.
     """
     try:
-        user_id = uuid.UUID(token_data.uid)
+        user_id = token_data["uid"]
         user: User | None = await user_service.get_by_id_detail(user_id)
 
         if user is None:

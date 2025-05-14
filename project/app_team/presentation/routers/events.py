@@ -4,7 +4,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from project.app_auth.domain.exceptions import UserNotFound
 from project.app_team.application.schemas import (
     CalendarEventCreate,
     CalendarEventRead,
@@ -85,11 +84,6 @@ async def include_user(
         return await event_service.include_user(
             user_id=data.user_id,
             event_id=data.event_id,
-        )
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
         )
     except CalendarEventNotFound as e:
         raise HTTPException(

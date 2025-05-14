@@ -13,6 +13,7 @@ from project.app_admin.admin_collector import admin_models
 from project.app_admin.auth_back import authentication_backend
 from project.config import settings
 from project.core.db.setup import async_engine
+from project.core.exc_handlers import exc_handlers
 from project.core.log_config import get_logger
 from project.route_collector import project_routers
 
@@ -43,6 +44,9 @@ app = FastAPI(
     description="Microservice app. Business management and control system",
 )
 
+for exc, handler in exc_handlers.items():
+    app.add_exception_handler(exc, handler)
+
 app_admin = Admin(
     app=app,
     engine=async_engine,
@@ -67,5 +71,6 @@ for app_router in project_routers:
 for admin_model in admin_models:
     app_admin.add_view(admin_model)
 
+logger.debug("Registered exception handlers: %d", len(exc_handlers))
 logger.debug("Registered routers: %d", len(project_routers))
 logger.debug("Registered admin models: %d", len(admin_models))

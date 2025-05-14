@@ -6,9 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
-from project.app_auth.application.schemas import TokenData
-from project.app_auth.domain.exceptions import UserNotFound
-from project.app_auth.presentation.dependencies import get_current_user_data
+from project.app_auth.presentation.dependencies import get_token_data
 from project.app_team.application.schemas import (
     Period,
     TaskCommentCreate,
@@ -53,11 +51,6 @@ async def create_task(
     """Create and assign a task."""
     try:
         return await task_service.create_assignment(data)
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except CalendarEventNotFound as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,11 +78,6 @@ async def update_task(
     try:
         return await task_service.update_task(task_id, data)
     except TaskNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    except UserNotFound as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
@@ -148,11 +136,6 @@ async def create_comment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
     except Exception as e:  # noqa
         logger.exception("Unexpected error while creating a comment.")
         raise HTTPException(
@@ -169,12 +152,12 @@ async def create_comment(
 async def assigned_tasks(
     period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
 ) -> list[Task]:
     """Get tasks assigned to a user for a period."""
     try:
         return await task_service.get_assigned_tasks(
-            assignee_id=uuid.UUID(token_data.uid),
+            assignee_id=token_data["uid"],
             period=period_schema,
         )
     except Exception as e:  # noqa
@@ -192,7 +175,7 @@ async def assigned_tasks(
 async def grades_assigned_tasks(
     period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
 ) -> list[tuple[str, int]]:
     """Get user tasks grades for a period.
 
@@ -200,7 +183,7 @@ async def grades_assigned_tasks(
     """
     try:
         return await task_service.get_grades_assigned_tasks(
-            assignee_id=uuid.UUID(token_data.uid),
+            assignee_id=token_data["uid"],
             period=period_schema,
         )
     except Exception as e:  # noqa
@@ -218,12 +201,12 @@ async def grades_assigned_tasks(
 async def avg_grade_period(
     period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
 ) -> ORJSONResponse:
     """Get average user grade for a specified period."""
     try:
         avg_grade = await task_service.get_avg_grade_period(
-            assignee_id=uuid.UUID(token_data.uid),
+            assignee_id=token_data["uid"],
             period=period_schema,
         )
     except Exception as e:  # noqa
@@ -245,12 +228,12 @@ async def avg_grade_period(
 async def avg_grade_period_command(
     period_schema: Annotated[Period, Depends()],
     task_service: Annotated[TaskService, Depends(get_task_service)],
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
 ) -> ORJSONResponse:
     """Get average grade of user command for a specified period."""
     try:
         command_avg_grade = await task_service.get_avg_grade_period_command(
-            assignee_id=uuid.UUID(token_data.uid),
+            assignee_id=token_data["uid"],
             period=period_schema,
         )
     except Exception as e:  # noqa

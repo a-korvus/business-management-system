@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 from project.app_auth.application.schemas import (
     LoginSchema,
     ProfileUpdate,
-    TokenData,
     UserCreate,
     UserDetail,
     UserRead,
@@ -17,18 +16,16 @@ from project.app_auth.application.services.users import UserService
 from project.app_auth.domain.exceptions import (
     AuthenticationError,
     EmailAlreadyExists,
-    UserNotFound,
 )
 from project.app_auth.domain.models import User
 from project.app_auth.presentation.dependencies import (
     get_admin,
     get_current_user,
-    get_current_user_data,
+    get_token_data,
     get_user_service,
 )
 from project.app_auth.presentation.exceptions import CredentialException
 from project.app_org.application.schemas import AssignRolePayload
-from project.app_org.domain.exceptions import CommandNotFound, RoleNotFound
 from project.config import settings
 from project.core.exceptions import OperatingDataException
 from project.core.log_config import get_logger
@@ -72,12 +69,11 @@ async def get_personal_data(
 )
 async def update_personal_data(
     update_data: ProfileUpdate,
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     """Update user profile. Protected endpoint."""
-    user_id = uuid.UUID(token_data.uid)
-    return await user_service.update_profile(user_id, update_data)
+    return await user_service.update_profile(token_data["uid"], update_data)
 
 
 @router.delete(
@@ -88,12 +84,11 @@ async def update_personal_data(
     "Then run permanent deletion after 30 days.",
 )
 async def deactivate_user(
-    token_data: Annotated[TokenData, Depends(get_current_user_data)],
+    token_data: Annotated[dict, Depends(get_token_data)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> None:
     """Deactivate user. Protected endpoint."""
-    user_id = uuid.UUID(token_data.uid)
-    await user_service.deactivate_user(user_id=user_id)
+    await user_service.deactivate_user(user_id=token_data["uid"])
 
 
 @router.post(
@@ -110,12 +105,12 @@ async def restore_user(
     """Restore user if deactivate earlier."""
     try:
         return await user_service.restore_user(credentials)
-    except UserNotFound:
-        raise CredentialException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Email doesn't exist.",
+    except AuthenticationError as e:
+        logger.error(
+            "Authentication failed. Email: '%s', reason: '%s",
+            credentials.username,
+            str(e),
         )
-    except AuthenticationError:
         raise CredentialException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Password is invalid.",
@@ -139,7 +134,7 @@ async def get_list_all_users(
 
 @router.get(path="/{user_id}/", response_model=UserDetail)
 async def get_user_detail(
-    user_id: Annotated[uuid.UUID, Path()],
+    user_id: Annotated[uuid.UUID, Path(description="Existing user ID")],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     """Get the user from DB with all related models."""
@@ -167,10 +162,6 @@ async def create_user(
         return await core_service.create_user(schema=create_schema)
     except EmailAlreadyExists as e:
         raise OperatingDataException(detail=str(e))
-    except CommandNotFound as e:
-        raise OperatingDataException(detail=str(e))
-    except RoleNotFound as e:
-        raise OperatingDataException(detail=str(e))
 
 
 @router.put(
@@ -185,13 +176,7 @@ async def update_profile(
     admin: Annotated[User, Depends(get_admin)],
 ) -> User:
     """Update a user profile. Protected. For admins only."""
-    try:
-        return await user_service.update_profile(user_id, updating_data)
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
+    return await user_service.update_profile(user_id, updating_data)
 
 
 @router.patch(
@@ -206,27 +191,14 @@ async def assign_user_role(
     admin: Annotated[User, Depends(get_admin)],
 ) -> User:
     """Assign a role to a user. Protected. For admins only."""
-    try:
-        user = await core_service.assign_user_role(
-            user_id=user_id,
-            role_id=role_payload.role_id,
-        )
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    except RoleNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    return user
+    return await core_service.assign_user_role(
+        user_id=user_id,
+        role_id=role_payload.role_id,
+    )
 
 
 @router.delete(
     path="/{user_id}/role/",
-    status_code=status.HTTP_200_OK,
     response_model=UserRead,
 )
 async def revoke_user_role(
@@ -235,11 +207,4 @@ async def revoke_user_role(
     admin: Annotated[User, Depends(get_admin)],
 ) -> User:
     """Revoke a role from a user. Protected. For admins only."""
-    try:
-        user = await user_service.revoke_role(user_id)
-    except UserNotFound as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
-    return user
+    return await user_service.revoke_role(user_id)
