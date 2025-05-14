@@ -77,6 +77,11 @@ class UserService:
         async with self.uow:
             return await self.uow.users.get_by_email(email)
 
+    async def get_by_email_deatil(self, email: str) -> User | None:
+        """Get user by email. Load relations."""
+        async with self.uow:
+            return await self.uow.users.get_by_email_detail(email)
+
     async def get_all_users(self) -> list[UserRead]:
         """Get all users from DB.
 
