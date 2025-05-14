@@ -15,6 +15,9 @@ from project.app_org.application.schemas import (
     RoleCreate,
 )
 from project.app_org.application.services.command import CommandService
+from project.app_org.application.services.dep_in_com import (
+    DepartmentInCommandService,
+)
 from project.app_org.application.services.department import DepartmentService
 from project.app_org.application.services.news import NewsService
 from project.app_org.application.services.role import RoleService
@@ -63,6 +66,14 @@ def verify_command_service(
 ) -> CommandService:
     """Get command service instance."""
     return CommandService(uow_factory())
+
+
+@pytest.fixture(scope="function")
+def verify_dep_in_com_service(
+    uow_factory: Callable[[], SAOrgUnitOfWork],
+) -> DepartmentInCommandService:
+    """Get department in command service instance."""
+    return DepartmentInCommandService(uow_factory())
 
 
 @pytest.fixture(scope="function")

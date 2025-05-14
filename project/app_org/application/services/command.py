@@ -10,11 +10,10 @@ from project.app_org.domain.exceptions import (
     CommandNameExistsError,
     CommandNotEmpty,
     CommandNotFound,
-    DepartmentNotFound,
 )
-from project.app_org.domain.models import Command, Department
+from project.app_org.domain.models import Command
 from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
-from project.core.db.utils import exists_relationships
+from project.core.db.utils import check_active_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -32,14 +31,6 @@ class CommandService:
         """Get command by ID."""
         async with self.uow as uow:
             return await uow.commands.get_by_id(command_id)
-
-    async def get_by_id_with_departments(
-        self,
-        command_id: uuid.UUID,
-    ) -> Command | None:
-        """Get command by ID. Use options to load related departments."""
-        async with self.uow as uow:
-            return await uow.commands.get_by_id_with_departments(command_id)
 
     async def get_by_name(self, name: str) -> Command | None:
         """Get command by name."""
@@ -63,7 +54,7 @@ class CommandService:
             new_command = Command(**data.model_dump())
             await uow.commands.add(new_command)
             await uow.commit()
-            await uow.refresh(new_command, attribute_names=["departments"])
+            await uow.refresh(new_command)
             logger.debug(
                 "Command instance '%s' refreshed after creating.",
                 new_command.id,
@@ -82,6 +73,7 @@ class CommandService:
         async with self.uow as uow:
             upd_command = await uow.commands.get_by_id(command_id)
             if not upd_command:
+                logger.warning("Command with id '%s' not found", command_id)
                 raise CommandNotFound(command_id=command_id)
 
             if data.name:
@@ -91,14 +83,11 @@ class CommandService:
                     raise CommandNameExistsError(name=data.name)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(upd_command, field_name) != field_value:
-                    setattr(upd_command, field_name, field_value)
-                    needs_update = True
+                setattr(upd_command, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await uow.commit()
                 await uow.refresh(upd_command)
                 logger.debug(
@@ -116,7 +105,7 @@ class CommandService:
             if not command:
                 raise CommandNotFound(command_id)
 
-            active_relationships = exists_relationships(command)
+            active_relationships = check_active_relationships(command)
             if active_relationships:
                 raise CommandNotEmpty(
                     command_name=command.name,
@@ -135,88 +124,7 @@ class CommandService:
             command: Command | None = await uow.commands.get_by_id(command_id)
             if not command:
                 raise CommandNotFound(command_id)
-            if not command.is_active:
-                command.is_active = True
-                await uow.commit()
-                await uow.refresh(command)
+
+            command.is_active = True
+            await uow.commit()
         return True
-
-    async def list_departments(
-        self,
-        command_id: uuid.UUID,
-    ) -> list[Department]:
-        """Get all department inside the command."""
-        async with self.uow as uow:
-            command = await uow.commands.get_by_id(command_id)
-            if not command:
-                raise CommandNotFound(command_id=command_id)
-
-            return command.departments
-
-    async def add_department(
-        self,
-        command_id: uuid.UUID,
-        department_id: uuid.UUID,
-    ) -> Command:
-        """Add department to the command."""
-        async with self.uow as uow:
-            command = await uow.commands.get_by_id_with_departments(command_id)
-            if not command:
-                raise CommandNotFound(command_id=command_id)
-
-            department: Department | None = await uow.departments.get_by_id(
-                department_id=department_id,
-            )
-            if not department:
-                raise DepartmentNotFound(department_id)
-
-            if department not in command.departments:
-                command.departments.append(department)
-                await uow.commit()
-                logger.debug(
-                    "Department '%s' added to command '%s'",
-                    department_id,
-                    command_id,
-                )
-
-            logger.debug(
-                "Command '%s' already contains the department '%s'",
-                command_id,
-                department_id,
-            )
-
-            return command
-
-    async def exclude_department(
-        self,
-        command_id: uuid.UUID,
-        department_id: uuid.UUID,
-    ) -> Command:
-        """Exclude department from the command."""
-        async with self.uow as uow:
-            command = await uow.commands.get_by_id_with_departments(command_id)
-            if not command:
-                raise CommandNotFound(command_id=command_id)
-
-            department: Department | None = await uow.departments.get_by_id(
-                department_id=department_id,
-            )
-            if not department:
-                raise DepartmentNotFound(department_id)
-
-            if department in command.departments:
-                command.departments.remove(department)
-                await uow.commit()
-                logger.debug(
-                    "Department '%s' excluded from command '%s'",
-                    department_id,
-                    command_id,
-                )
-
-            logger.debug(
-                "Command '%s' isn't contain the department '%s'",
-                command_id,
-                department_id,
-            )
-
-            return command

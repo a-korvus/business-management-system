@@ -13,6 +13,9 @@ from project.app_org.application.schemas import (
     DepartmentCreate,
 )
 from project.app_org.application.services.command import CommandService
+from project.app_org.application.services.dep_in_com import (
+    DepartmentInCommandService,
+)
 from project.app_org.application.services.department import DepartmentService
 from project.app_org.domain.exceptions import CommandNameExistsError
 from project.app_org.domain.models import Command, Department
@@ -36,8 +39,6 @@ async def test_create(
     assert new_command.is_active is True
     assert isinstance(new_command.created_at, datetime)
     assert isinstance(new_command.updated_at, datetime)
-    assert isinstance(new_command.departments, list)
-    assert len(new_command.departments) == 0
 
     with pytest.raises(CommandNameExistsError):
         await verify_command_service.create(data=fake_command_schema)
@@ -56,28 +57,29 @@ async def test_get_by_id(
 
     assert isinstance(command, Command)
     assert new_command.id == command.id
-    assert new_command.departments == command.departments
+    assert new_command.description == command.description
 
 
 async def test_get_by_id_with_departments(
     verify_command_service: CommandService,
+    verify_dep_in_com_service: DepartmentInCommandService,
     fake_command_schema: CommandCreate,
 ) -> None:
     """Test retrieving the existing command by its ID.
 
     With related departments.
     """
-    new_command = await verify_command_service.create(data=fake_command_schema)
+    new_command = await verify_command_service.create(fake_command_schema)
 
     assert isinstance(new_command, Command)
 
-    command = await verify_command_service.get_by_id_with_departments(
+    command = await verify_dep_in_com_service.get_by_id_with_departments(
         command_id=new_command.id
     )
 
     assert isinstance(command, Command)
     assert new_command.id == command.id
-    assert new_command.departments == command.departments
+    assert isinstance(new_command.departments, list)
 
 
 async def test_get_by_name(
@@ -93,7 +95,6 @@ async def test_get_by_name(
 
     assert isinstance(command, Command)
     assert new_command.id == command.id
-    assert new_command.departments == command.departments
 
 
 async def test_get_all(
@@ -141,19 +142,18 @@ async def test_update(
 
 
 async def test_add_exclude_department(
-    verify_command_service: CommandService,
     verify_department_service: DepartmentService,
+    verify_dep_in_com_service: DepartmentInCommandService,
     fake_command_schema: CommandCreate,
     fake_department_schema: DepartmentCreate,
     uow_sess_factory: Callable[[], SAOrgUnitOfWork],
 ) -> None:
     """Test adding a department to a command and exclusion from."""
-    # создать команду
+    # создать команду без департаментов по умолчанию
     command_service = CommandService(uow=uow_sess_factory())
     command = await command_service.create(data=fake_command_schema)
 
     assert isinstance(command, Command)
-    assert len(command.departments) == 0
 
     # создать департамент
     department = await verify_department_service.create(
@@ -165,14 +165,14 @@ async def test_add_exclude_department(
     assert department.command_id is None
 
     # добавить департамент в команду
-    await verify_command_service.add_department(
+    await verify_dep_in_com_service.add_department(
         command_id=command.id,
         department_id=department.id,
     )
 
     # проверить, что он есть, выгрузив команду по ID
-    adding_command_service = CommandService(uow=uow_sess_factory())
-    updated_command = await adding_command_service.get_by_id_with_departments(
+    adding_command_serv = DepartmentInCommandService(uow=uow_sess_factory())
+    updated_command = await adding_command_serv.get_by_id_with_departments(
         command_id=command.id,
     )
 
@@ -180,15 +180,15 @@ async def test_add_exclude_department(
     assert department.id in [dep.id for dep in updated_command.departments]
 
     # удалить департамент из команды
-    excluding_command_service = CommandService(uow=uow_sess_factory())
-    await excluding_command_service.exclude_department(
+    excluding_command_serv = DepartmentInCommandService(uow=uow_sess_factory())
+    await excluding_command_serv.exclude_department(
         command_id=command.id,
         department_id=department.id,
     )
 
     # проверить, что его больше нет в команде
-    final_command_service = CommandService(uow=uow_sess_factory())
-    final_command = await final_command_service.get_by_id_with_departments(
+    final_serv = DepartmentInCommandService(uow=uow_sess_factory())
+    final_command = await final_serv.get_by_id_with_departments(
         command_id=command.id,
     )
 
@@ -199,6 +199,7 @@ async def test_add_exclude_department(
 async def test_list_departments(
     verify_command_service: CommandService,
     verify_department_service: DepartmentService,
+    verify_dep_in_com_service: DepartmentInCommandService,
     fake_command_schema: CommandCreate,
     fake_department_schema: DepartmentCreate,
     uow_sess_factory: Callable[[], SAOrgUnitOfWork],
@@ -211,15 +212,16 @@ async def test_list_departments(
         department = await verify_department_service.create(
             data=fake_department_schema,
         )
-        await verify_command_service.add_department(
+        await verify_dep_in_com_service.add_department(
             command_id=command.id,
             department_id=department.id,
         )
         department_count += 1
 
-    alter_command_service = CommandService(uow=uow_sess_factory())
-    upgraded_command = await alter_command_service.get_by_id_with_departments(
-        command_id=command.id,
+    upgraded_command = (
+        await verify_dep_in_com_service.get_by_id_with_departments(
+            command_id=command.id,
+        )
     )
 
     assert isinstance(upgraded_command, Command)

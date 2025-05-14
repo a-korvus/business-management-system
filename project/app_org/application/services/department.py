@@ -14,7 +14,7 @@ from project.app_org.domain.exceptions import (
 )
 from project.app_org.domain.models import Department, Role
 from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
-from project.core.db.utils import exists_relationships
+from project.core.db.utils import check_active_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -78,21 +78,24 @@ class DepartmentService:
         async with self.uow as uow:
             upd_department = await uow.departments.get_by_id(department_id)
             if not upd_department:
+                logger.warning(
+                    "Department with id '%s' not found", department_id
+                )
                 raise DepartmentNotFound(department_id=department_id)
 
             if data.command_id:
                 if not await uow.commands.get_by_id(data.command_id):
+                    logger.warning(
+                        "Command with id '%s' not found", data.command_id
+                    )
                     raise CommandNotFound(command_id=data.command_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(upd_department, field_name) != field_value:
-                    setattr(upd_department, field_name, field_value)
-                    needs_update = True
+                setattr(upd_department, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await uow.commit()
                 await uow.refresh(upd_department)
                 logger.debug(
@@ -111,7 +114,7 @@ class DepartmentService:
             if not department:
                 raise DepartmentNotFound(department_id)
 
-            active_relationships = exists_relationships(department)
+            active_relationships = check_active_relationships(department)
             if active_relationships:
                 raise DepartmentNotEmpty(
                     department_name=department.name,
@@ -132,10 +135,9 @@ class DepartmentService:
             )
             if not department:
                 raise DepartmentNotFound(department_id)
-            if not department.is_active:
-                department.is_active = True
-                await uow.commit()
-                await uow.refresh(department)
+
+            department.is_active = True
+            await uow.commit()
         return True
 
     async def list_roles(

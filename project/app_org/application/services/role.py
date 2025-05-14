@@ -10,7 +10,7 @@ from project.app_org.domain.exceptions import (
 )
 from project.app_org.domain.models import Role
 from project.app_org.infrastructure.unit_of_work import SAOrgUnitOfWork
-from project.core.db.utils import exists_relationships
+from project.core.db.utils import check_active_relationships
 from project.core.log_config import get_logger
 
 logger = get_logger(__name__)
@@ -82,21 +82,22 @@ class RoleService:
         async with self.uow as uow:
             upd_role = await uow.roles.get_by_id(role_id)
             if not upd_role:
+                logger.warning("Role with id '%s' not found", role_id)
                 raise RoleNotFound(role_id=role_id)
 
             if data.department_id:
                 if not await uow.departments.get_by_id(data.department_id):
+                    logger.warning(
+                        "Department with id '%s' not found", data.department_id
+                    )
                     raise DepartmentNotFound(department_id=data.department_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(upd_role, field_name) != field_value:
-                    setattr(upd_role, field_name, field_value)
-                    needs_update = True
+                setattr(upd_role, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await uow.commit()
                 await uow.refresh(upd_role)
                 logger.debug(
@@ -112,7 +113,7 @@ class RoleService:
             if not role:
                 raise RoleNotFound(role_id)
 
-            active_relationships = exists_relationships(role)
+            active_relationships = check_active_relationships(role)
             if active_relationships:
                 raise RoleNotEmpty(
                     role_name=role.name.value,
@@ -133,8 +134,7 @@ class RoleService:
             )
             if not role:
                 raise RoleNotFound(role_id)
-            if not role.is_active:
-                role.is_active = True
-                await uow.commit()
-                await uow.refresh(role)
+
+            role.is_active = True
+            await uow.commit()
         return True

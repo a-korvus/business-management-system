@@ -60,17 +60,15 @@ class TaskCommentService:
         async with self.uow as uow:
             comment = await uow.tasks_comments.get_by_id(comment_id)
             if not comment:
+                logger.warning("Comment with id '%s' not found", comment_id)
                 raise TaskCommentNotFound(comment_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(comment, field_name) != field_value:
-                    setattr(comment, field_name, field_value)
-                    needs_update = True
+                setattr(comment, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await self.uow.commit()
                 await self.uow.refresh(comment)
 

@@ -23,8 +23,8 @@ def load_all_relationships(
     return options
 
 
-def exists_relationships(model_instance: Base) -> list[str]:
-    """Check that model instance doesn't have lists of relationships."""
+def check_active_relationships(model_instance: Base) -> list[str]:
+    """Check that model instance have the list of relationships."""
     cls_mapper: Mapper = inspect(model_instance.__class__)
     active_relationships: list[str] = []
 

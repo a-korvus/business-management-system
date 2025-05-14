@@ -139,6 +139,7 @@ class TaskService:
         async with self.uow as uow:
             task = await uow.tasks.get_by_id(task_id)
             if not task or not task.is_active:
+                logger.warning("Task with id '%s' not found", task)
                 raise TaskNotFound(task_id)
             if data.assignee_id and not await uow.partners.get_by_id(
                 data.assignee_id
@@ -150,14 +151,11 @@ class TaskService:
                 raise CalendarEventNotFound(data.calendar_event_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(task, field_name) != field_value:
-                    setattr(task, field_name, field_value)
-                    needs_update = True
+                setattr(task, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await self.uow.commit()
                 await self.uow.refresh(task)
 

@@ -78,19 +78,18 @@ class MeetingService:
         async with self.uow as uow:
             meeting: Meeting | None = await uow.meetings.get_by_id(meeting_id)
             if not meeting:
+                logger.warning("Meeting with id '%s' not found", meeting_id)
                 raise MeetingNotFound(meeting_id)
 
             upd_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in upd_data.items():
-                if getattr(meeting, field_name) != field_value:
-                    setattr(meeting, field_name, field_value)
-                    needs_update = True
+                setattr(meeting, field_name, field_value)
 
-            if needs_update:
+            if upd_data:
                 await uow.commit()
                 await uow.refresh(meeting)
+
             return meeting
 
     async def deactivate(self, meeting_id: uuid.UUID) -> bool:

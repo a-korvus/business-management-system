@@ -143,20 +143,20 @@ class UserService:
         async with self.uow:
             user: User | None = await self.uow.users.get_by_id_detail(user_id)
             if not user:
+                logger.warning("User with id '%s' not found", user_id)
                 raise UserNotFound(user_id=user_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
 
             for field_name, field_value in update_data.items():
-                if getattr(user.profile, field_name) != field_value:
-                    setattr(user.profile, field_name, field_value)
-                    needs_update = True
+                setattr(user.profile, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await self.uow.commit()
                 await self.uow.refresh(user, attribute_names=["profile"])
-
+                logger.debug(
+                    "User instance '%s' refreshed after update.", user_id
+                )
             return user
 
     async def restore_user(self, credentials: LoginSchema) -> User:

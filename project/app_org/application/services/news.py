@@ -47,17 +47,14 @@ class NewsService:
         async with self.uow as uow:
             upd_news = await uow.news.get_by_id(news_id)
             if not upd_news:
+                logger.warning("Post with id '%s' not found", news_id)
                 raise NewsNotFound(news_id=news_id)
 
             update_data: dict = data.model_dump(exclude_unset=True)
-            needs_update = False
-
             for field_name, field_value in update_data.items():
-                if getattr(upd_news, field_name) != field_value:
-                    setattr(upd_news, field_name, field_value)
-                    needs_update = True
+                setattr(upd_news, field_name, field_value)
 
-            if needs_update:
+            if update_data:
                 await uow.commit()
                 await uow.refresh(upd_news)
                 logger.debug(
