@@ -1,16 +1,16 @@
-"""Custom exeptions to use in the project."""
+"""Custom exceptions to use in the project."""
 
 from fastapi import HTTPException, status
 
 
 class DomainError(Exception):
-    """Base class for domain model exeptions."""
+    """Base class for domain model exceptions."""
 
     ...
 
 
 class OperatingDataException(HTTPException):
-    """HTTP exception idicates incorrect operating data."""
+    """HTTP exception indicates incorrect operating data."""
 
     def __init__(
         self,

@@ -45,8 +45,16 @@ class UserService:
         Returns:
             User: User instance.
         """
+        if not any((user_id, email)):
+            raise ValueError(
+                "The method must receive one of the values ​​user_id or email."
+            )
+
+        unique_identifier: uuid.UUID | str | None = None
+        user: User | None = None
+
         if user_id:
-            unique_identifier: uuid.UUID | str = user_id
+            unique_identifier = user_id
             user = await self.uow.users.get_by_id(user_id)
         elif email:
             unique_identifier = email
@@ -77,7 +85,7 @@ class UserService:
         async with self.uow:
             return await self.uow.users.get_by_email(email)
 
-    async def get_by_email_deatil(self, email: str) -> User | None:
+    async def get_by_email_detail(self, email: str) -> User | None:
         """Get user by email. Load relations."""
         async with self.uow:
             return await self.uow.users.get_by_email_detail(email)

@@ -26,7 +26,7 @@ class UserAdmin(ModelView, model=User):
     column_default_sort = "created_at"
 
     # profile отображаем ссылкой, чтобы можно было сразу из user переместиться
-    # к редактированию связаного профиля
+    # к редактированию связанного профиля
     column_details_list = [
         User.email,
         User.created_at,

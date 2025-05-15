@@ -107,7 +107,7 @@ class User(Base):
         "TaskComment",
         back_populates="commentator",
     )
-    meetengs_created: Mapped[list[Meeting]] = relationship(
+    meetings_created: Mapped[list[Meeting]] = relationship(
         "Meeting",
         back_populates="creator",
     )

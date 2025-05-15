@@ -73,7 +73,6 @@ class DepartmentRead(DepartmentBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    command_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -129,7 +128,6 @@ class RoleRead(RoleBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    department_id: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
 

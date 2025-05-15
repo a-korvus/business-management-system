@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 
 
 class CredentialException(HTTPException):
-    """HTTP exception idicates incorrect user credentials."""
+    """HTTP exception indicates incorrect user credentials."""
 
     def __init__(
         self,

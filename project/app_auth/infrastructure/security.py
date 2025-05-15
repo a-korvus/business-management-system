@@ -38,7 +38,6 @@ class CryptographyPasswordHasher(PasswordHasher):
         self.parallelism = parallelism
         self.salt_length = salt_length
         self.hash_length = hash_length
-        # self.backend = None  # cryptography default backend OpenSSL
 
     def _get_argon2_instance(self, salt: bytes) -> Argon2id:
         """Create an 'Argon2id' instance with current parameters.
@@ -55,7 +54,6 @@ class CryptographyPasswordHasher(PasswordHasher):
             iterations=self.time_cost,
             lanes=self.parallelism,
             memory_cost=self.memory_cost,
-            # backend=self.backend,
         )
 
     def hash_password(self, plain_pswrd: str) -> str:
@@ -111,7 +109,7 @@ class CryptographyPasswordHasher(PasswordHasher):
 
         argon2 = self._get_argon2_instance(salt)
         try:
-            # InvalidKey, если хэши не совпадают
+            # InvalidKey, если хеши не совпадают
             argon2.verify(plain_pswrd.encode("utf-8"), stored_hash_b)
             return True
         except InvalidKey:
@@ -127,4 +125,4 @@ password_hasher = CryptographyPasswordHasher()
 @lru_cache(maxsize=1)
 def get_password_hasher() -> PasswordHasher:
     """Get the only one password hasher instance."""
-    return password_hasher  # синглтон
+    return password_hasher  # singleton

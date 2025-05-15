@@ -34,7 +34,7 @@ class AdminAuth(AuthenticationBackend):
             return False
 
         # get User
-        user: User | None = await user_service.get_by_email_deatil(email)
+        user: User | None = await user_service.get_by_email_detail(email)
         if not user:
             logger.warning("User '%s' doesn't exist.", email)
             return False
@@ -48,7 +48,7 @@ class AdminAuth(AuthenticationBackend):
         if not validate_pswd:
             return False
 
-        user_command: str | None
+        user_command: str | None = None
         if user.command:
             user_command = user.command.name
         access_rights: bool = any(

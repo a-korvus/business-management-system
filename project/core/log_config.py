@@ -7,7 +7,7 @@ from functools import lru_cache
 
 from project.config import settings
 
-# основная конфигурация логгера для проекта
+# основная конфигурация
 log_conf: dict = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -40,7 +40,7 @@ log_conf: dict = {
     },
 }
 
-# вспомогательная конфигурация логгера для development mode
+# вспомогательная конфигурация development mode
 if settings.DEV_MODE:
     # log_conf["loggers"]["file"]["level"] = "DEBUG"
     # log_conf["handlers"]["file"]["level"] = "DEBUG"

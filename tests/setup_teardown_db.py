@@ -202,7 +202,7 @@ async def cleanup_test_environment(
         try:
             logger.info("Terminating active sessions to DB '%s'", test_db)
             # завершить все активные подключения к БД, за исключением текущего
-            # иначе невозможно удалить БД с актиынми подключениями
+            # иначе невозможно удалить БД с активнми подключениями
             terminate_sessions_sql = text(
                 "SELECT pg_terminate_backend(pid) "
                 "FROM pg_stat_activity "

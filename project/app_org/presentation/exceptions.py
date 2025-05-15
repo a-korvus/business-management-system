@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 
 
 class AccessRightsError(HTTPException):
-    """HTTP exception idicates incorrect user role to access."""
+    """HTTP exception indicates incorrect user role to access."""
 
     def __init__(
         self,

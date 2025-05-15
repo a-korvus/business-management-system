@@ -455,7 +455,7 @@ async def test_get_avg_grade_period_command(
         task_count += 1
     await db_session.commit()
 
-    # расчитываем общую среднюю оценку из назначенных оценок
+    # рассчитываем общую среднюю оценку из назначенных оценок
     expected_avg_1 = total_grade_1 / Decimal(task_count)
     expected_avg_2 = total_grade_2 / Decimal(task_count)
     common_avg = (expected_avg_1 + expected_avg_2) / Decimal("2")

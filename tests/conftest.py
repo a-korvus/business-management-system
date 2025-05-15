@@ -71,7 +71,7 @@ async def db_engine(
         logger.info("Test engine created successfully.")
 
         async def async_finalizer() -> None:
-            """Final teardown to realize resourses."""
+            """Final teardown to realize resources."""
             logger.info("Running final database teardown (finalizer)")
             await teardown_db_after_tests()
             logger.info("Final database teardown completed (finalizer)")

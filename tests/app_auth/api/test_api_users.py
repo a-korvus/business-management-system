@@ -160,7 +160,7 @@ async def test_read_users_me_invalid_token(
     """Test get user personal data with invalid token."""
     response: Response = await httpx_test_client.get(
         url=f"{USERS_PREFIX}/me/",
-        headers={"Authorization": "Bearer invalidtoken"},
+        headers={"Authorization": "Bearer invalid-token"},
     )
     assert response.status_code == 401
 

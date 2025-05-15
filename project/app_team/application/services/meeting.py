@@ -93,7 +93,7 @@ class MeetingService:
             return meeting
 
     async def deactivate(self, meeting_id: uuid.UUID) -> bool:
-        """Dectivate the meeting."""
+        """Deactivate the meeting."""
         async with self.uow as uow:
             meeting: Meeting | None = await uow.meetings.get_by_id(meeting_id)
             if not meeting:

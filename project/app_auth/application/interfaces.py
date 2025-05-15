@@ -26,7 +26,7 @@ class AbstractUserRepository(abc.ABC):
     """Interface for implementing model-specific User operations."""
 
     @abc.abstractmethod
-    async def get_by_id(self, user_id: uuid.UUID) -> "User" | None:
+    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         """Get User by its ID."""
         raise NotImplementedError
 
@@ -41,27 +41,27 @@ class AbstractUserRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def get_by_id_detail(self, user_id: uuid.UUID) -> "User" | None:
+    async def get_by_id_detail(self, user_id: uuid.UUID) -> User | None:
         """Get User by its ID with all relationships."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def get_by_email(self, email: str) -> "User" | None:
+    async def get_by_email(self, email: str) -> User | None:
         """Get User by its email."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def get_by_email_detail(self, email: str) -> "User" | None:
+    async def get_by_email_detail(self, email: str) -> User | None:
         """Get User by its email with all relationships."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def list_all(self) -> list["User"]:
+    async def list_all(self) -> list[User]:
         """Get list of User objects."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def add(self, user: "User") -> None:
+    async def add(self, user: User) -> None:
         """Add User object to session."""
         raise NotImplementedError
 

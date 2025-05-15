@@ -21,13 +21,13 @@ class PGConfig(BaseSettings):
     PORT: int = 5432
     DB_NAME: str = "my_db"
     USER: str = "task_user"
-    PASSWORD: str = "some_pswr"
+    PASSWORD: str = "some_pswrd"
     DSN: PostgresDsn | None = None
 
-    # для админского движка в тестовом окружении
+    # for admin engine in test environment
     ADMIN_DB_NAME: str = "my_db"
     ADMIN_USER: str = "task_user"
-    ADMIN_PASSWORD: str = "some_pswr"
+    ADMIN_PASSWORD: str = "some_pswrd"
 
     model_config = SettingsConfigDict(env_prefix="PG_", extra="allow")
 
@@ -107,7 +107,7 @@ class RedisConfig(BaseSettings):
 class AuthConfig(BaseSettings):
     """Configuration specific to the 'app auth' application."""
 
-    # префиксы роутеров
+    # router prefixes
     PREFIX_AUTH: str = "/auth"
     PREFIX_USERS: str = "/users"
 
@@ -119,8 +119,8 @@ class AuthConfig(BaseSettings):
     JWT_AUDIENCE: str = "my_api_resource"  # кто получает токен
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # настройки хеширования паролей (Argon2)
-    ARGON2_TIME_COST: int = 3  # количество итераций при хэшировании
+    # password hashing settings (Argon2)
+    ARGON2_TIME_COST: int = 3  # количество итераций при хешировании
     ARGON2_MEMORY_COST: int = 65536  # 64 MiB опер.памяти на хэш одного пароля
     ARGON2_PARALLELISM: int = os.cpu_count() or 4
     ARGON2_SALT_LENGTH: int = 16  # byte, 128 bit
@@ -145,7 +145,7 @@ class ProjectSettings(BaseSettings):
     PREFIX_ORG: str = "/org"
     PREFIX_TEAM: str = "/team"
 
-    # вложенные конфиги
+    # nested configs
     DB: PGConfig = PGConfig()
     REDIS: RedisConfig = RedisConfig()
     AUTH: AuthConfig = AuthConfig()

@@ -100,7 +100,7 @@ async def deactivate_task(
     task_id: uuid.UUID,
     task_service: Annotated[TaskService, Depends(get_task_service)],
 ) -> None:
-    """Deacticate a task."""
+    """Deactivate a task."""
     try:
         await task_service.deactivate_task(task_id)
     except TaskNotFound as e:

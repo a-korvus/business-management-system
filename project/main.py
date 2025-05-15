@@ -25,8 +25,8 @@ middlewares = [
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Implemetation of FastAPI app life cycle."""
+async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
+    """Implementation of FastAPI app life cycle."""
     logger.info("Application startup.")
 
     yield

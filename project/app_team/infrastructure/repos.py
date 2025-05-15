@@ -246,7 +246,7 @@ class SATaskRepo(AbsTaskRepo):
 
 
 class SATaskCommentRepo(AbsTaskCommentRepo):
-    """Implementation of task commens repository using sqlalchemy."""
+    """Implementation of task comments repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
         """Initialize a TaskComment Repository."""

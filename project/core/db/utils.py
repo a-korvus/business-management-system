@@ -4,8 +4,10 @@ from typing import Sequence
 
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, joinedload
+
+# from sqlalchemy.orm.strategy_options import LoaderOption
+from sqlalchemy.orm.interfaces import LoaderOption
 from sqlalchemy.orm.mapper import Mapper
-from sqlalchemy.orm.strategy_options import LoaderOption
 
 from project.core.db.base import Base
 

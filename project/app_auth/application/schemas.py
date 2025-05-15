@@ -25,7 +25,7 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    """Schema to serialize the User instace."""
+    """Schema to serialize the User instance."""
 
     id: uuid.UUID
     is_active: bool
@@ -41,7 +41,7 @@ class UserRead(UserBase):
 
 
 class UserDetail(UserBase):
-    """Schema to serialize the User instace with all related data."""
+    """Schema to serialize the User instance with all related data."""
 
     id: uuid.UUID
     is_active: bool

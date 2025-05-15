@@ -208,7 +208,7 @@ async def test_update_task_grade(
     assert new_task.id is not None
     assert new_task.grade is None
 
-    update_schema = TaskUpdate(grade=2)
+    update_schema = TaskUpdate(grade=2)  # type: ignore
     upd_task = await verify_task_service.update_task(
         task_id=new_task.id,
         data=update_schema,

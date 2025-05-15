@@ -69,7 +69,7 @@ async def register(
         logger.exception("Unexpected error during registration")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected error occurred during registartion.",
+            detail="Unexpected error occurred during registration.",
         )
 
 
@@ -105,8 +105,8 @@ async def login_for_access_token(
             detail="Authentication failed due to an internal server error.",
         )
     except Exception as e:  # noqa
-        logger.exception("Unexpected erroe during login.")
+        logger.exception("Unexpected error during login.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occerred during login.",
+            detail="An unexpected error occurred during login.",
         )

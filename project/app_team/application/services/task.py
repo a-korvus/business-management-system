@@ -114,7 +114,7 @@ class TaskService:
             )
 
     async def create_assignment(self, data: TaskCreate) -> Task:
-        """Create a task. Assing to user."""
+        """Create a task. Assign to user."""
         async with self.uow as uow:
             creator = await uow.partners.get_by_id(data.creator_id)
             if not creator:

@@ -75,30 +75,30 @@ async def get_current_user(
         user_service (Annotated[UserService, Depends): App User service.
 
     Raises:
+        CredentialException: UUID is invalid.
         CredentialException: User not found in DB.
         CredentialException: User exists but inactive.
-        CredentialException: UUID is invalid.
 
     Returns:
         User: User model object.
     """
+    user_id = token_data["uid"]
     try:
-        user_id = token_data["uid"]
         user: User | None = await user_service.get_by_id_detail(user_id)
-
-        if user is None:
-            raise CredentialException(
-                detail="Could not validate credentials (user not found)"
-            )
-        elif not user.is_active:
-            raise CredentialException(
-                detail="Could not validate credentials (user inactive)"
-            )
-
-        return user
-    except ValueError:  # ValueError если UUID невалидный
+    except ValueError:  # UUID невалидный
         logger.exception("UUID invalid: %s", user_id)
         raise CredentialException()
+
+    if user is None:
+        raise CredentialException(
+            detail="Could not validate credentials (user not found)"
+        )
+    elif not user.is_active:
+        raise CredentialException(
+            detail="Could not validate credentials (user inactive)"
+        )
+
+    return user
 
 
 async def get_admin(
@@ -113,27 +113,28 @@ async def get_admin(
     Returns:
         User: Authenticated user that has an admin role.
     """
+    user_id = token_data["uid"]
     try:
-        user_id = token_data["uid"]
         user: User | None = await user_service.get_by_id_detail(user_id)
-
-        if user is None:
-            raise CredentialException(
-                detail="Could not validate credentials (user not found)"
-            )
-        elif not user.is_active:
-            raise CredentialException(
-                detail="Could not validate credentials (user inactive)"
-            )
-        elif user.role != RoleType.ADMINISTRATOR and not user.command:
-            raise AccessRightsError()
-        elif (
-            user.role != RoleType.ADMINISTRATOR
-            and user.command.name != settings.MASTER_COMMAND_NAME
-        ):
-            raise AccessRightsError()
-
-        return user
-    except ValueError:  # ValueError если UUID невалидный
+    except ValueError:  # UUID невалидный
         logger.exception("UUID invalid: %s", user_id)
         raise CredentialException()
+
+    if user is None:
+        raise CredentialException(
+            detail="Could not validate credentials (user not found)"
+        )
+    elif not user.is_active:
+        raise CredentialException(
+            detail="Could not validate credentials (user inactive)"
+        )
+    elif user.role != RoleType.ADMINISTRATOR and not user.command:
+        raise AccessRightsError()
+    elif (
+        user.role != RoleType.ADMINISTRATOR
+        and user.command is not None
+        and user.command.name != settings.MASTER_COMMAND_NAME
+    ):
+        raise AccessRightsError()
+
+    return user

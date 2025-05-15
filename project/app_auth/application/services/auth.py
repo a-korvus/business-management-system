@@ -40,7 +40,7 @@ class AuthService:
             user_data (UserCreate): New user data as pydantic schema.
 
         Raises:
-            EmailAlreadyExists: If the email alrady exists in DB.
+            EmailAlreadyExists: If the email already exists in DB.
 
         Returns:
             UserRead: Schema of the new user object.
@@ -56,7 +56,7 @@ class AuthService:
                 ):
                     raise CommandNotFound(command_id=user_data.command_id)
 
-            # создание доменного объекта User, хэширование внтури __init__
+            # создание доменного объекта User, хэш внутри __init__
             new_user = User(
                 email=user_data.email,
                 plain_password=user_data.password,

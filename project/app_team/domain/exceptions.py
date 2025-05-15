@@ -1,4 +1,4 @@
-"""Custom exeptions to use in the domain models."""
+"""Custom exceptions to use in the domain models."""
 
 import uuid
 

@@ -29,7 +29,7 @@ def create_access_token(
     """Create JWT using Authlib.
 
     Args:
-        data (dict): Some useful data. 'sub' key required with user ID valiue.
+        data (dict): Some useful data. 'sub' key required with user ID value.
         expires_delta (timedelta | None, optional): Token lifetime.
             Defaults to None.
 

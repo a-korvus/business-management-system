@@ -129,17 +129,17 @@ async def test_deactivate_activate_user(
     assert new_user.is_active is False
 
     change_status_activate = await UserService(
-        uow=uow_factory(),
+        uow=uow_factory(),  # type: ignore
     ).activate_user(
         user_id=new_user.id,
     )
     stored_user = await UserService(
-        uow=uow_factory(),
+        uow=uow_factory(),  # type: ignore
     ).get_user_by_id(
         user_id=new_user.id,
     )
     assert change_status_activate is True
-    assert stored_user.is_active is True
+    assert stored_user.is_active is True  # type: ignore
 
 
 async def test_update_profile(

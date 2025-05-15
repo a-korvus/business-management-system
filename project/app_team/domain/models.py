@@ -289,7 +289,7 @@ class Meeting(Base):
 
     creator: Mapped[User] = relationship(
         "User",
-        back_populates="meetengs_created",
+        back_populates="meetings_created",
     )
     command: Mapped[Command] = relationship(
         "Command",
@@ -327,7 +327,7 @@ class Meeting(Base):
             self.add_members(meet_members)
 
     def add_members(self, new_members: list[User]) -> None:
-        """Add new memebers to the meeting and related event."""
+        """Add new members to the meeting and related event."""
         self.members.extend(new_members)
         self.calendar_event.users.extend(new_members)
 

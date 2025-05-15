@@ -46,10 +46,10 @@ async def test_assign_user_role(fake_user_schema: UserCreate) -> None:
 
     assert new_role.id is not None
 
-    assigment_user = await core_service.assign_user_role(
+    assignment_user = await core_service.assign_user_role(
         user_id=new_user.id,
         role_id=new_role.id,
     )
 
-    assert assigment_user.id == new_user.id
-    assert assigment_user.role_id == new_role.id
+    assert assignment_user.id == new_user.id
+    assert assignment_user.role_id == new_role.id
