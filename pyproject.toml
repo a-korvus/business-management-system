@@ -1,0 +1,125 @@
+[project]
+name = "business-management-system"
+version = "0.1.0"
+description = "Small example of business management system."
+authors = [{ name = "Alex", email = "alx.korvus@gmail.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]",
+    "sqlalchemy>=2.0",
+    "alembic",
+    "alembic-postgresql-enum",
+    "asyncpg",
+    "cryptography",
+    "authlib",
+    "httpx",
+    "sqladmin",
+    "celery",
+    "redis",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pip-tools",
+    "pipdeptree",
+    "pytest",
+    "pytest-dotenv",
+    "pytest-asyncio",
+    "faker",
+
+    # linters
+    "mypy",
+    "black",
+    "isort",
+    "flake8",
+    "flake8-docstrings",
+    "flake8-bugbear",
+    "flake8-pie",
+    "flake8-pyproject",
+
+    # stubs
+    "types-authlib",
+    "celery-types",
+]
+
+[build-system]
+requires = ["setuptools>=79"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["project"]
+
+[tool.mypy]
+exclude = ["venv/", ".venv/", "build/", "dist/"]
+namespace_packages = true
+explicit_package_bases = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+follow_imports = "normal"
+
+[tool.black]
+line-length = 79
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.flake8]
+exclude = [
+    "venv",
+    ".venv",
+    "__pycache__",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".vscode",
+]
+max-line-length = 79
+max-complexity = 10
+docstring-convention = "google"
+select = [
+    "B",   # flake8-bugbear
+    "E",   # pycodestyle: Ошибки
+    "W",   # pycodestyle: Предупреждения
+    "F",   # pyflakes
+    "PIE", # flake8-pie
+    "D",   # pydocstyle: flake8-docstrings
+]
+ignore = ["W503", "E704"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = [".", "project"]
+testpaths = ["tests"]
+norecursedirs = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "project",
+]
+env_files = [".env.test"]
+env_override_existing_values = true
+
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+addopts = "-sv --maxfail=3"
+
+console_output_style = "progress"
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s [%(levelname)s] %(message)s"
+log_cli_date_format = "%Y-%m-%d_%H:%M:%S"
+
+markers = [
+    "slow: marks tests as slow (use '-m \"not slow\"' to skip)",
+    "network: tests requiring network access",
+]
+
+junit_family = "xunit2"
+junit_logging = "all"
+
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "session"

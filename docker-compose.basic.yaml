@@ -1,0 +1,77 @@
+x-app_base: &app_base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  restart: unless-stopped
+  networks:
+    - task_net
+
+services:
+  nginx:
+    image: nginx:1.27
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+    networks:
+      - task_net
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      fastapi_service:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15
+    env_file:
+      - .env
+    container_name: ${PG_HOST}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB_NAME}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    networks:
+      - task_net
+    volumes:
+      - vol_bms_pg:/var/lib/postgresql/data
+    ports:
+      - "${PG_PORT:-5432}:${PG_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $PG_USER -d $PG_DB_NAME"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: ["postgres", "-c", "jit=off"]
+
+  fastapi_service:
+    <<: *app_base
+    image: fastapi
+    container_name: fastapi
+    volumes:
+      - ./project:/home/dude/bms_service/project:rw
+    command: >
+      sh -c '
+        alembic upgrade head &&
+        python -m project.app_admin.create_master &&
+        uvicorn project.main:app --host 0.0.0.0 --port 8000 --reload
+      '
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8000/health/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  vol_bms_pg:
+    name: vol_bms_pg
+
+networks:
+  task_net:
+    external: true
