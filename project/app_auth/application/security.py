@@ -36,11 +36,13 @@ def create_access_token(
     Returns:
         str: Decoded token as a string.
     """
-    to_encode = data.copy()
-    if "sub" not in to_encode:
+    if "sub" not in data:
+        logger.exception("Missing 'sub' in token.")
         raise CredentialException(
             detail="Token data doesn't contain key 'sub'"
         )
+
+    to_encode = data.copy()
 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -90,24 +92,20 @@ def decode_access_token(token: str) -> TokenData | None:
         )
 
         # валидация временных утверждений (exp, nbf, iat) с допуском 60 сек
-        claims.validate(leeway=60)
-
-        return TokenData.model_validate(
-            {"sub": claims.get("sub"), "uid": claims.get("uid")}
-        )
+        claims.validate(leeway=settings.AUTH.JWT_LEEWAY)
     except ExpiredTokenError:
         logger.info("Token expired.")
         return None
     except MissingClaimError:
         logger.exception("Missing claim in token")
         raise CredentialException(detail="Missing required claim in token")
-    except InvalidClaimError:
-        raise CredentialException(detail="Invalid assertion in token")
+    except InvalidClaimError as e:
+        logger.warning("Invalid assertion in token: %s", e)
+        return None
     except JoseError:
         logger.exception("JOSE error validating token")
         raise CredentialException()
-    except Exception:  # noqa
-        logger.exception("Unexpected error validating token")
-        raise CredentialException(
-            detail="An unexpected error occurred during token validation",
-        )
+
+    token_data = TokenData.model_validate(claims)
+    logger.info("Token data validated successfully.")
+    return token_data

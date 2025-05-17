@@ -22,6 +22,7 @@ class CryptographyPasswordHasher(PasswordHasher):
     """Implementation password hasher using 'cryptography' and 'Agron2id'.
 
     Stores salt and hash in one string <base64(salt):base64(hash)>.
+    Format: "salt:hash", both in base64, separated by ":"
     """
 
     def __init__(
@@ -98,13 +99,31 @@ class CryptographyPasswordHasher(PasswordHasher):
             stored_hash_b = base64.urlsafe_b64decode(hash_b64.encode("utf-8"))
         except (ValueError, TypeError):
             # строка не парсится или base64 некорректен
+            logger.error("Error parsing a stored password: '%s'", stored_pswrd)
             raise InvalidPasswordFormatError(
                 msg="Could not parse stored password",
             ) from None
 
         if len(stored_hash_b) != self.hash_length:
+            logger.error(
+                "Error validation a length of stored password. "
+                "Stored password length: '%d', default hash length: '%d'",
+                len(stored_hash_b),
+                self.hash_length,
+            )
             raise InvalidPasswordFormatError(
                 msg="Stored hash has incorrect length",
+            )
+
+        if len(salt) != self.salt_length:
+            logger.error(
+                "Error validation a length of stored password salt. "
+                "Stored salt length: '%d', default salt length: '%d'",
+                len(salt),
+                self.salt_length,
+            )
+            raise InvalidPasswordFormatError(
+                msg="Stored salt of hash has incorrect length",
             )
 
         argon2 = self._get_argon2_instance(salt)
@@ -123,6 +142,6 @@ password_hasher = CryptographyPasswordHasher()
 
 
 @lru_cache(maxsize=1)
-def get_password_hasher() -> PasswordHasher:
+def get_password_hasher() -> CryptographyPasswordHasher:
     """Get the only one password hasher instance."""
     return password_hasher  # singleton

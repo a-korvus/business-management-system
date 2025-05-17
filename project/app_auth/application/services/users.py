@@ -61,7 +61,7 @@ class UserService:
             user = await self.uow.users.get_by_email(email)
 
         if not user:
-            logger.warning("User %s not found in DB", unique_identifier)
+            logger.warning("User '%s' not found in DB", unique_identifier)
             raise UserNotFound(user_id, email)
         return user
 
@@ -90,14 +90,14 @@ class UserService:
         async with self.uow:
             return await self.uow.users.get_by_email_detail(email)
 
-    async def get_all_users(self) -> list[UserRead]:
+    async def get_all_users(self, offset: int, limit: int) -> list[UserRead]:
         """Get all users from DB.
 
         Returns:
             list[UserRead]: All users as pydantic schemas.
         """
         async with self.uow:
-            users = await self.uow.users.list_all()
+            users = await self.uow.users.list_all(offset, limit)
             return [UserRead.model_validate(user) for user in users]
 
     async def deactivate_user(
@@ -191,6 +191,10 @@ class UserService:
             )
             if not check_password:
                 # введен неверный пароль
+                logger.info(
+                    "User '%s' entered a wrong password to recover the account",  # noqa
+                    credentials.username,
+                )
                 raise AuthenticationError()
 
             if user.is_active:
@@ -201,6 +205,7 @@ class UserService:
             user.activate()
             await uow.commit()
             await uow.refresh(user)
+            logger.info("User '%s' restored", credentials.username)
             return user
 
     async def revoke_role(self, user_id: uuid.UUID) -> User:
@@ -214,5 +219,6 @@ class UserService:
                 user.role_id = None
                 await uow.commit()
                 await uow.refresh(user)
+                logger.info("Role revoked from user '%s'", user_id)
 
             return user

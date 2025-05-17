@@ -23,7 +23,7 @@ class PasswordHasher(Protocol):
 
 
 class AbstractUserRepository(abc.ABC):
-    """Interface for implementing model-specific User operations."""
+    """Abstract interface for User model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
@@ -56,8 +56,8 @@ class AbstractUserRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def list_all(self) -> list[User]:
-        """Get list of User objects."""
+    async def list_all(self, offset: int, limit: int) -> list[User]:
+        """Get list of User objects with pagination."""
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -73,6 +73,7 @@ class AuthService:
                 new_user.id,
             )
             # возвращаем pydantic схему обновленного объекта
+            logger.info("User '%s' registered in the system.", user_data.email)
             return UserRead.model_validate(new_user)
 
     async def authenticate_user(self, credentials: LoginSchema) -> Token:
@@ -103,6 +104,10 @@ class AuthService:
 
             try:
                 if not user.check_password(credentials.password, self.hasher):
+                    logger.warning(
+                        "User '%s' entered a wrong password.",
+                        credentials.username,
+                    )
                     raise AuthenticationError("Incorrect password.")
             except InvalidPasswordFormatError as e:
                 # если хэш в БД поврежден или в старом формате
@@ -114,5 +119,9 @@ class AuthService:
         # генерация JWT токена
         access_token: str = create_access_token(
             data={"sub": user.email, "uid": str(user.id)}
+        )
+        logger.info(
+            "User '%s' authenticated successfully",
+            credentials.username,
         )
         return Token(access_token=access_token, token_type="bearer")

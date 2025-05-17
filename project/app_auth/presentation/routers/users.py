@@ -3,7 +3,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from project.app_auth.application.schemas import (
     LoginSchema,
@@ -29,6 +29,7 @@ from project.app_org.application.schemas import AssignRolePayload
 from project.config import settings
 from project.core.exceptions import OperatingDataException
 from project.core.log_config import get_logger
+from project.core.schemas import Pagination
 from project.core.service import CoreService, get_core_service
 
 logger = get_logger(__name__)
@@ -119,6 +120,7 @@ async def restore_user(
 
 @router.get("/", response_model=list[UserRead])
 async def get_list_all_users(
+    pagination: Annotated[Pagination, Query()],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> list[UserRead]:
     """Get the list of all users from DB.
@@ -129,7 +131,9 @@ async def get_list_all_users(
     Returns:
         list[UserRead]: All users data.
     """
-    return await user_service.get_all_users()
+    return await user_service.get_all_users(
+        pagination.offset, pagination.limit
+    )
 
 
 @router.get(path="/{user_id}/", response_model=UserDetail)

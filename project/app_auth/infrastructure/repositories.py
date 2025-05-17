@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from project.app_auth.application.interfaces import AbstractUserRepository
 from project.app_auth.domain.models import User
+from project.app_org.domain.models import Command
 
 
 class SAUserRepository(AbstractUserRepository):
@@ -77,22 +78,35 @@ class SAUserRepository(AbstractUserRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_all(self) -> list[User]:
-        """Get all users."""
-        result = await self._session.execute(
-            select(User).order_by(User.created_at)
-        )
+    async def list_all(self, offset: int = 0, limit: int = 10) -> list[User]:
+        """Get users with pagination.
+
+        Args:
+            offset (int, optional): Number of records to skip for pagination.
+                Defaults to 0.
+            limit (int, optional): Maximum number of records to return.
+                Defaults to 10.
+
+        Returns:
+            list[User]: A list of users.
+        """
+        stmt = select(User).order_by(User.created_at)
+
+        if offset > 0:
+            stmt = stmt.offset(offset)
+
+        stmt = stmt.limit(limit)
+
+        result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
     async def add(self, user: User) -> None:
-        """Add new user in sqlalchemy async session."""
+        """Add a new user to a session within the current transaction."""
         self._session.add(user)
         await self._session.flush([user])
 
     async def check_command_exists(self, command_id: uuid.UUID) -> bool:
         """Check that the command exists."""
-        from project.app_org.domain.models import Command
-
         stmt = select(exists().where(Command.id == command_id))
         result = await self._session.execute(stmt)
         return bool(result.scalar_one_or_none())

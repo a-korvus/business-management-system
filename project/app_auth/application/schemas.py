@@ -106,3 +106,7 @@ class TokenData(BaseModel):
 
     sub: EmailStr | None = None  # (subject) для email по стандарту JWT
     uid: str | None = None
+    iss: str | None = None
+    aud: str | None = None
+
+    model_config = ConfigDict(extra="allow")
