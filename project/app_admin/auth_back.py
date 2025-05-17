@@ -41,11 +41,11 @@ class AdminAuth(AuthenticationBackend):
 
         # validate password
         hasher: PasswordHasher = get_password_hasher()
-        validate_pswd: bool = hasher.verify_password(
+        validate_pswrd: bool = hasher.verify_password(
             plain_pswrd=password,
             stored_pswrd=user.hashed_password,
         )
-        if not validate_pswd:
+        if not validate_pswrd:
             return False
 
         user_command: str | None = None
@@ -91,7 +91,7 @@ class AdminAuth(AuthenticationBackend):
         elif not request.session.get("access_rights"):
             return RedirectResponse(
                 url=request.url_for("admin:login"),
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_302_FOUND,
             )
 
         return True

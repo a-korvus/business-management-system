@@ -1,6 +1,7 @@
 """Constants in 'app_admin'."""
 
 PAGE_SIZE_DEFAULT = 20
+PAGE_SIZE_MAX = 200
 PAGE_SIZE_VAR_1 = 10
 PAGE_SIZE_VAR_2 = 25
 PAGE_SIZE_VAR_3 = 50

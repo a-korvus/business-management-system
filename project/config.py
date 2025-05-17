@@ -117,6 +117,7 @@ class AuthConfig(BaseSettings):
     JWT_TYPE: str = "JWT"
     JWT_ISSUER: str = "my_auth_server"  # кто создал и подписал токен
     JWT_AUDIENCE: str = "my_api_resource"  # кто получает токен
+    JWT_LEEWAY: int = 60  # 60 сек; допуск на проверку временных меток
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # password hashing settings (Argon2)

@@ -2,9 +2,9 @@
 
 from sqladmin import ModelView
 
-from project.app_admin import constants as CS
 from project.app_admin.formatters import format_datetime_local
 from project.app_auth.domain.models import Profile, User
+from project.core import constants as CS
 
 
 class UserAdmin(ModelView, model=User):
