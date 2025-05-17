@@ -2,21 +2,21 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import raiseload, selectinload
 
 from project.app_org.application.interfaces import (
-    AbsCommandRepository,
-    AbsDepartmentRepository,
-    AbsNewsRepository,
-    AbsRoleRepository,
+    AbstractCommandRepository,
+    AbstractDepartmentRepository,
+    AbstractNewsRepository,
+    AbstractRoleRepository,
 )
 from project.app_org.domain.models import Command, Department, News, Role
 from project.core.db.utils import load_all_relationships
 
 
-class SACommandRepo(AbsCommandRepository):
+class SACommandRepo(AbstractCommandRepository):
     """Implementation of command repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -72,13 +72,14 @@ class SACommandRepo(AbsCommandRepository):
         )
         return list(result.scalars().all())
 
-    async def add(self, command: Command) -> None:
+    async def add(self, command: Command) -> uuid.UUID:
         """Add new command in sqlalchemy async session."""
         self._session.add(command)
         await self._session.flush([command])
+        return command.id
 
 
-class SADepartmentRepo(AbsDepartmentRepository):
+class SADepartmentRepo(AbstractDepartmentRepository):
     """Implementation of department repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -132,13 +133,14 @@ class SADepartmentRepo(AbsDepartmentRepository):
         )
         return list(result.scalars().all())
 
-    async def add(self, department: Department) -> None:
+    async def add(self, department: Department) -> uuid.UUID:
         """Add new department in sqlalchemy async session."""
         self._session.add(department)
         await self._session.flush([department])
+        return department.id
 
 
-class SARoleRepo(AbsRoleRepository):
+class SARoleRepo(AbstractRoleRepository):
     """Implementation of role repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -178,7 +180,7 @@ class SARoleRepo(AbsRoleRepository):
         return result.unique().scalar_one_or_none()
 
     async def list_all(self) -> list[Role]:
-        """Get all role."""
+        """Get all roles."""
         result = await self._session.execute(
             select(Role)
             .options(raiseload(Role.department), raiseload(Role.users))
@@ -186,13 +188,14 @@ class SARoleRepo(AbsRoleRepository):
         )
         return list(result.scalars().all())
 
-    async def add(self, role: Role) -> None:
+    async def add(self, role: Role) -> uuid.UUID:
         """Add new role in sqlalchemy async session."""
         self._session.add(role)
         await self._session.flush([role])
+        return role.id
 
 
-class SANewsRepo(AbsNewsRepository):
+class SANewsRepo(AbstractNewsRepository):
     """Implementation of news repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -206,14 +209,20 @@ class SANewsRepo(AbsNewsRepository):
         )
         return result.scalar_one_or_none()
 
-    async def list_all(self) -> list[News]:
-        """Get all news."""
-        result = await self._session.execute(
-            select(News).order_by(News.updated_at)
-        )
+    async def list_all(self, offset: int = 0, limit: int = 10) -> list[News]:
+        """Get all news with pagination."""
+        stmt = select(News).order_by(desc(News.created_at))
+
+        if offset > 0:
+            stmt = stmt.offset(offset)
+
+        stmt = stmt.limit(limit)
+
+        result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
-    async def add(self, news: News) -> None:
+    async def add(self, news: News) -> uuid.UUID:
         """Add new news in sqlalchemy async session."""
         self._session.add(news)
         await self._session.flush([news])
+        return news.id

@@ -5,13 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    ValidationError,
-    field_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field
 
 from project.app_org.application.enums import RoleType
 
@@ -87,37 +81,13 @@ class RoleBase(BaseModel):
 class RoleCreate(RoleBase):
     """Validate the role input data."""
 
-    name: RoleType | None = RoleType.WORKER
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def ensure_name_lower(cls, value: str | None) -> str | None:
-        """Ensure the 'name' value is lowercase."""
-        if value is not None and not isinstance(value, str):
-            raise ValidationError(f"Role name {value} isn't a string")
-
-        if isinstance(value, str):
-            value = value.lower()
-
-        return value
+    name: RoleType = RoleType.WORKER
 
 
 class RoleUpdate(RoleBase):
     """Update existing role."""
 
     name: RoleType | None = None
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def ensure_name_lower(cls, value: str | None) -> str | None:
-        """Ensure the 'name' value is lowercase."""
-        if value is not None and not isinstance(value, str):
-            raise ValidationError(f"Role name {value} isn't a string")
-
-        if isinstance(value, str):
-            value = value.lower()
-
-        return value
 
 
 class RoleRead(RoleBase):
@@ -141,7 +111,7 @@ class AssignRolePayload(BaseModel):
 class NewsBase(BaseModel):
     """News base schema."""
 
-    text: str = Field(..., max_length=5000)
+    text: str = Field(..., min_length=1, max_length=5000)
 
 
 class NewsCreate(NewsBase):

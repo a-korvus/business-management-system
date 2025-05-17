@@ -3,7 +3,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from project.app_auth.domain.models import User
 from project.app_auth.presentation.dependencies import get_admin
@@ -18,6 +18,7 @@ from project.app_org.domain.models import News
 from project.app_org.presentation.dependencies import get_news_service
 from project.config import settings
 from project.core.log_config import get_logger
+from project.core.schemas import Pagination
 
 logger = get_logger(__name__)
 
@@ -63,11 +64,12 @@ async def new_post(
     description="Get all information posts in the organization.",
 )
 async def get_news(
+    pagination: Annotated[Pagination, Query()],
     news_service: Annotated[NewsService, Depends(get_news_service)],
 ) -> list[News]:
     """Get all posts."""
     try:
-        return await news_service.get_all()
+        return await news_service.get_all(pagination.offset, pagination.limit)
     except Exception:  # noqa
         logger.exception("Unexpected error while retrieving all messages.")
         raise HTTPException(

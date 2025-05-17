@@ -6,8 +6,8 @@ import uuid
 from project.app_org.domain.models import Command, Department, News, Role
 
 
-class AbsCommandRepository(abc.ABC):
-    """Interface for implementing model-specific Command operations."""
+class AbstractCommandRepository(abc.ABC):
+    """Abstract interface for Command model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, command_id: uuid.UUID) -> Command | None:
@@ -38,13 +38,13 @@ class AbsCommandRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def add(self, command: Command) -> None:
+    async def add(self, command: Command) -> uuid.UUID:
         """Add Command object to session."""
         raise NotImplementedError
 
 
-class AbsDepartmentRepository(abc.ABC):
-    """Interface for implementing model-specific Department operations."""
+class AbstractDepartmentRepository(abc.ABC):
+    """Abstract interface for Department model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, department_id: uuid.UUID) -> Department | None:
@@ -73,13 +73,13 @@ class AbsDepartmentRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def add(self, department: Department) -> None:
+    async def add(self, department: Department) -> uuid.UUID:
         """Add Department object to session."""
         raise NotImplementedError
 
 
-class AbsRoleRepository(abc.ABC):
-    """Interface for implementing model-specific Role operations."""
+class AbstractRoleRepository(abc.ABC):
+    """Abstract interface for Role model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, role_id: uuid.UUID) -> Role | None:
@@ -105,13 +105,13 @@ class AbsRoleRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def add(self, role: Role) -> None:
+    async def add(self, role: Role) -> uuid.UUID:
         """Add Role object to session."""
         raise NotImplementedError
 
 
-class AbsNewsRepository(abc.ABC):
-    """Interface for implementing model-specific News operations."""
+class AbstractNewsRepository(abc.ABC):
+    """Abstract interface for News model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, news_id: uuid.UUID) -> News | None:
@@ -119,11 +119,11 @@ class AbsNewsRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def list_all(self) -> list[News]:
-        """Get list of News objects."""
+    async def list_all(self, offset: int, limit: int) -> list[News]:
+        """Get list of News objects with pagination."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def add(self, news: News) -> None:
+    async def add(self, news: News) -> uuid.UUID:
         """Add News object to session."""
         raise NotImplementedError

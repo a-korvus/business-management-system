@@ -24,10 +24,10 @@ class NewsService:
         async with self.uow as uow:
             return await uow.news.get_by_id(news_id)
 
-    async def get_all(self) -> list[News]:
+    async def get_all(self, offset: int, limit: int) -> list[News]:
         """Get all news from DB."""
         async with self.uow as uow:
-            return await uow.news.list_all()
+            return await uow.news.list_all(offset, limit)
 
     async def create(self, data: NewsCreate) -> News:
         """Create a new News instance."""
