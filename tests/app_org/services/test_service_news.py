@@ -58,7 +58,7 @@ async def test_get_all(
         await alter_news_service.create(data=fake_news_schema)
         post_count += 1
 
-    posts = await verify_news_service.get_all()
+    posts = await verify_news_service.get_all(offset=0, limit=post_count)
 
     assert isinstance(posts, list)
     assert post_count == len(posts)

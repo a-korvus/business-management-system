@@ -95,7 +95,7 @@ async def test_get_all_users(
     db_session.add_all(users)
     await db_session.commit()
 
-    stored_users = await verify_user_service.get_all_users()
+    stored_users = await verify_user_service.get_all_users(0, len(users))
 
     assert isinstance(stored_users, list)
     assert len(users) == len(stored_users)
