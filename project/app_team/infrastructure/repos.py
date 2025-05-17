@@ -13,11 +13,11 @@ from project.app_auth.domain.models import User
 from project.app_org.domain.models import Command
 from project.app_team.application.enums import TaskGrade
 from project.app_team.application.interfaces import (
-    AbsCalendarEventRepo,
-    AbsMeetingRepo,
-    AbsPartnerRepo,
-    AbsTaskCommentRepo,
-    AbsTaskRepo,
+    AbstractCalendarEventRepository,
+    AbstractMeetingRepository,
+    AbstractPartnerRepository,
+    AbstractTaskCommentRepository,
+    AbstractTaskRepository,
 )
 from project.app_team.domain.models import (
     CalendarEvent,
@@ -29,7 +29,7 @@ from project.app_team.domain.models import (
 from project.core.db.utils import load_all_relationships
 
 
-class SAPartnerRepo(AbsPartnerRepo):
+class SAPartnerRepo(AbstractPartnerRepository):
     """Implementation of User-related actions."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -108,7 +108,7 @@ class SAPartnerRepo(AbsPartnerRepo):
         return list(result.unique().scalars().all())
 
 
-class SATaskRepo(AbsTaskRepo):
+class SATaskRepo(AbstractTaskRepository):
     """Implementation of tasks repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -245,7 +245,7 @@ class SATaskRepo(AbsTaskRepo):
         await self._session.flush([task])
 
 
-class SATaskCommentRepo(AbsTaskCommentRepo):
+class SATaskCommentRepo(AbstractTaskCommentRepository):
     """Implementation of task comments repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -278,7 +278,7 @@ class SATaskCommentRepo(AbsTaskCommentRepo):
         await self._session.flush([taskcomment])
 
 
-class SACalendarEventRepo(AbsCalendarEventRepo):
+class SACalendarEventRepo(AbstractCalendarEventRepository):
     """Implementation of calendar events repository using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -355,7 +355,7 @@ class SACalendarEventRepo(AbsCalendarEventRepo):
         return result.scalar_one_or_none()
 
 
-class SAMeetingRepo(AbsMeetingRepo):
+class SAMeetingRepo(AbstractMeetingRepository):
     """Implementation of meeting using sqlalchemy."""
 
     def __init__(self, session: AsyncSession) -> None:

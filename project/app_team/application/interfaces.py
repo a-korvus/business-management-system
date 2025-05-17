@@ -15,8 +15,8 @@ from project.app_team.domain.models import (
 )
 
 
-class AbsPartnerRepo(abc.ABC):
-    """Interface for implementing User-related operations."""
+class AbstractPartnerRepository(abc.ABC):
+    """Abstract interface for User-related operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
@@ -54,8 +54,8 @@ class AbsPartnerRepo(abc.ABC):
         raise NotImplementedError
 
 
-class AbsTaskRepo(abc.ABC):
-    """Interface for implementing model-specific Task operations."""
+class AbstractTaskRepository(abc.ABC):
+    """Abstract interface for Task model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, task_id: uuid.UUID) -> Task | None:
@@ -116,8 +116,8 @@ class AbsTaskRepo(abc.ABC):
         raise NotImplementedError
 
 
-class AbsTaskCommentRepo(abc.ABC):
-    """Interface for implementing model-specific TaskComment operations."""
+class AbstractTaskCommentRepository(abc.ABC):
+    """Abstract interface for TaskComment model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, taskcomment_id: uuid.UUID) -> TaskComment | None:
@@ -138,8 +138,8 @@ class AbsTaskCommentRepo(abc.ABC):
         raise NotImplementedError
 
 
-class AbsCalendarEventRepo(abc.ABC):
-    """Interface for implementing model-specific CalendarEvent operations."""
+class AbstractCalendarEventRepository(abc.ABC):
+    """Abstract interface for CalendarEvent model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, c_event_id: uuid.UUID) -> CalendarEvent | None:
@@ -180,8 +180,8 @@ class AbsCalendarEventRepo(abc.ABC):
         raise NotImplementedError
 
 
-class AbsMeetingRepo(abc.ABC):
-    """Interface for implementing model-specific Meeting operations."""
+class AbstractMeetingRepository(abc.ABC):
+    """Abstract interface for Meeting model operations."""
 
     @abc.abstractmethod
     async def get_by_id(self, meeting_id: uuid.UUID) -> Meeting | None:
