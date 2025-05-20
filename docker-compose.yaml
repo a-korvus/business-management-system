@@ -1,0 +1,137 @@
+x-app_base: &app_base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  restart: unless-stopped
+  networks:
+    - task_net
+
+services:
+  nginx:
+    image: nginx:1.27
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+    networks:
+      - task_net
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      fastapi_service:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15
+    env_file:
+      - .env
+    container_name: ${PG_HOST}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB_NAME}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    networks:
+      - task_net
+    volumes:
+      - vol_bms_pg:/var/lib/postgresql/data
+    ports:
+      - "${PG_PORT:-5432}:${PG_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $PG_USER -d $PG_DB_NAME"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: ["postgres", "-c", "jit=off"]
+
+  redis:
+    image: redis:7.4
+    env_file:
+      - .env
+    container_name: ${REDIS_HOST}
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
+    ports:
+      - ${REDIS_PORT:-6379}:${REDIS_PORT}
+    networks:
+      - task_net
+    volumes:
+      - vol_bms_redis:/data
+    command: >
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "requirepass $REDIS_PASSWORD" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendfsync everysec" >> /usr/local/etc/redis/redis.conf &&
+        echo "dir /data" >> /usr/local/etc/redis/redis.conf &&
+        echo "user default off" > /usr/local/etc/redis/users.acl &&
+        echo "user $REDIS_USER on >$REDIS_USER_PASSWORD ~* +@all +subscribe +publish &*" >> /usr/local/etc/redis/users.acl &&
+        exec redis-server /usr/local/etc/redis/redis.conf --aclfile /usr/local/etc/redis/users.acl
+      '
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $REDIS_PASSWORD ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  fastapi_service:
+    <<: *app_base
+    image: fastapi
+    container_name: fastapi
+    volumes:
+      - vol_bms_fastapi_logs:/home/dude/bms_service/log
+      - ./project:/home/dude/bms_service/project:rw
+    command: >
+      sh -c '
+        alembic upgrade head &&
+        python -m project.app_admin.create_master &&
+        uvicorn project.main:app --host 0.0.0.0 --port 8000 --reload
+      '
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8000/health/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  celery_worker:
+    <<: *app_base
+    image: celery_worker
+    container_name: celery_worker
+    command: celery -A project.background.celery_app.celery_app worker --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    <<: *app_base
+    image: celery_beat
+    container_name: celery_beat
+    command: celery -A project.background.celery_app.celery_app beat --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  vol_bms_pg:
+    name: vol_bms_pg
+  vol_bms_redis:
+    name: vol_bms_redis
+  vol_bms_fastapi_logs:
+    name: vol_bms_fastapi_logs
+
+networks:
+  task_net:
+    external: true
