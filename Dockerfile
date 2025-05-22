@@ -7,8 +7,8 @@ ENV HOME=/home/dude \
     DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p $PROJECT_DIR \
-    # && groupadd -r dude \
-    # && useradd -r -g dude dude \
+    && groupadd -r dude \
+    && useradd -r -g dude dude \
     && apt update && apt upgrade -y && apt autoremove -y \
     && apt install curl \
     && rm -rf /var/lib/apt/lists/*
@@ -21,11 +21,11 @@ WORKDIR $PROJECT_DIR
 COPY ./requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r ./requirements.txt
-    # && chown -R dude:dude $HOME
+    && pip install --no-cache-dir -r ./requirements.txt \
+    && chown -R dude:dude $HOME
 
 COPY . .
 
-# RUN chown -R dude:dude $PROJECT_DIR
+RUN chown -R dude:dude $PROJECT_DIR
 
-# USER dude
+USER dude
